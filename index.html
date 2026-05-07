@@ -1204,7 +1204,7 @@
           </div>
           <div class="ct">3 trophys</div>
         </div></div>
-        <div class="panel"><h3>Best award-to-film ratio 🎯</h3>
+        <div class="panel" style="display:none"><h3>Best award-to-film ratio 🎯</h3>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Weighted by submission count — more films = more trust</div>
           <div class="leader" data-kind="team" data-key="Frower House">
               <div class="u-flex-center">
@@ -1389,7 +1389,7 @@
           </div>
           <div class="ct">10 trophys</div>
         </div></div>
-        <div class="panel"><h3>Best member award-to-film ratio 🎯</h3>
+        <div class="panel" style="display:none"><h3>Best member award-to-film ratio 🎯</h3>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Weighted by film count — more films = more trust (min. 3 films)</div>
           <div class="leader" data-kind="member" data-key="Tristan Frower">
               <div class="u-flex-center">
@@ -2539,6 +2539,8 @@
     items = [...items];
     if (state.sort === 'trophies') {
       items.sort((a,b) => (b.awards.length - a.awards.length) || (b.year - a.year) || a.team.localeCompare(b.team));
+    } else if (state.sort === 'members') {
+      items.sort((a,b) => (b.members.length - a.members.length) || (b.year - a.year) || a.team.localeCompare(b.team));
     } else if (state.sort === 'films') {
       // for films view "most films" means most prolific team — sort by team film count desc
       const teamCount = new Map();
@@ -2739,56 +2741,6 @@
     const mostTeams = [...memberTeams.entries()]
       .filter(([,teams]) => teams.size > 1)
       .map(([mem, teams]) => [mem, teams.size])
-      .sort((a,b) => b[1]-a[1])
-      .slice(0, 12);
-
-    // --- Award-to-film ratio (teams with 2+ films) ---
-    const teamFilms = new Map();
-    const teamAwardCount = new Map();
-    for (const s of filtered) {
-      teamFilms.set(s.team, (teamFilms.get(s.team)||0) + 1);
-      teamAwardCount.set(s.team, (teamAwardCount.get(s.team)||0) + s.awards.length);
-    }
-    // Bayesian average: blend each team's ratio toward the global average,
-    // weighted by submission count. C = confidence constant (films needed to
-    // be fully trusted). Higher C = more benefit to prolific teams.
-    const C = 3;
-    const totalAwards = [...teamAwardCount.values()].reduce((a,b)=>a+b, 0);
-    const totalFilms  = [...teamFilms.values()].reduce((a,b)=>a+b, 0);
-    const globalAvg   = totalFilms > 0 ? totalAwards / totalFilms : 0;
-
-    const topRatioTeams = [...teamFilms.entries()]
-      .filter(([team, films]) => films >= 3 && (teamAwardCount.get(team)||0) > 0)
-      .map(([team, films]) => {
-        const awards = teamAwardCount.get(team)||0;
-        const rawRatio = awards / films;
-        const score = (films * rawRatio + C * globalAvg) / (films + C);
-        return [team, score, awards, films, rawRatio];
-      })
-      .sort((a,b) => b[1]-a[1])
-      .slice(0, 12);
-
-    // --- Award-to-film ratio by member ---
-    const memberFilms = new Map();
-    const memberAwardRatioCount = new Map();
-    for (const s of filtered) {
-      for (const mem of s.members) {
-        memberFilms.set(mem, (memberFilms.get(mem)||0) + 1);
-        memberAwardRatioCount.set(mem, (memberAwardRatioCount.get(mem)||0) + s.awards.length);
-      }
-    }
-    const totalMemberAwards = [...memberAwardRatioCount.values()].reduce((a,b)=>a+b, 0);
-    const totalMemberFilms  = [...memberFilms.values()].reduce((a,b)=>a+b, 0);
-    const globalMemberAvg   = totalMemberFilms > 0 ? totalMemberAwards / totalMemberFilms : 0;
-
-    const topRatioMembers = [...memberFilms.entries()]
-      .filter(([mem, films]) => films >= 3 && (memberAwardRatioCount.get(mem)||0) > 0)
-      .map(([mem, films]) => {
-        const awards = memberAwardRatioCount.get(mem)||0;
-        const rawRatio = awards / films;
-        const score = (films * rawRatio + C * globalMemberAvg) / (films + C);
-        return [mem, score, awards, films, rawRatio];
-      })
       .sort((a,b) => b[1]-a[1])
       .slice(0, 12);
 
@@ -3026,37 +2978,7 @@
         ${section('Awards &amp; trophies')}
 
         <div class="panel"><h3>Most decorated teams 🏆</h3>${rankedLeader(topTrophyTeams,'team', n => n+' trophy'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Best award-to-film ratio 🎯</h3>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Weighted by submission count — more films = more trust</div>
-          ${topRatioTeams.length ? topRatioTeams.map(([name, score, awards, films, rawRatio], i) => {
-            const medals = ['🥇','🥈','🥉'];
-            return `<div class="leader" data-kind="team" data-key="${esc(name)}">
-              <div class="u-flex-center">
-                <span class="u-rank-cell">${medals[i]||`<span class="u-rank-num">${i+1}</span>`}</span>
-                <div class="u-ellipsis">${esc(name)}</div>
-              </div>
-              <div class="ct" style="text-align:right;white-space:nowrap">
-                <span class="u-rank-num">${awards} award${awards>1?'s':''} / ${films} film${films>1?'s':''}&nbsp;</span>${rawRatio.toFixed(2)}
-              </div>
-            </div>`;
-          }).join('') : '<div class="empty u-empty-pad">—</div>'}
-        </div>
         <div class="panel"><h3>Most awarded members 🏆</h3>${rankedLeader(topAwardMembers,'member', n => n+' trophy'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Best member award-to-film ratio 🎯</h3>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Weighted by film count — more films = more trust (min. 3 films)</div>
-          ${topRatioMembers.length ? topRatioMembers.map(([name, score, awards, films, rawRatio], i) => {
-            const medals = ['🥇','🥈','🥉'];
-            return `<div class="leader" data-kind="member" data-key="${esc(name)}">
-              <div class="u-flex-center">
-                <span class="u-rank-cell">${medals[i]||'<span class="u-rank-num">'+(i+1)+'</span>'}</span>
-                <div class="u-ellipsis">${esc(name)}</div>
-              </div>
-              <div class="ct" style="text-align:right;white-space:nowrap">
-                <span class="u-rank-num">${awards} award${awards>1?'s':''} / ${films} film${films>1?'s':''}&nbsp;</span>${rawRatio.toFixed(2)}
-              </div>
-            </div>`;
-          }).join('') : '<div class="empty u-empty-pad">—</div>'}
-        </div>
         <div class="panel"><h3>Most awarded categories</h3>${rankedLeader(topAwards,'award', n => n+' winner'+(n>1?'s':''))}</div>
 
         ${section('Connections &amp; streaks')}
