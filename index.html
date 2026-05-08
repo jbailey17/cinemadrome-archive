@@ -2484,14 +2484,52 @@
 
   const DEFAULT_SORT = { films: 'newest', members: 'films', teams: 'films', awards: 'default', events: 'newest', stats: 'default' };
   const state = { view: 'events', q: '', event: '', year: '', sort: DEFAULT_SORT['events'] };
+  // Returns true if `needle` fuzzy-matches somewhere in `haystack`.
+  // Strategy: exact substring first (fast path), then check each word/token
+  // in the haystack against each word in the query using edit distance.
+  // Tolerance: 1 edit for queries 4-6 chars, 2 edits for 7+ chars.
+  function fuzzyContains(haystack, needle) {
+    if (haystack.includes(needle)) return true;
+    if (needle.length < 3) return false; // too short to bother with fuzzy
+    const maxDist = needle.length >= 7 ? 2 : 1;
+    // Split both sides into words for word-level fuzzy matching
+    const needleWords = needle.split(/\s+/).filter(Boolean);
+    const hayWords = haystack.split(/[\s\x01]+/).filter(Boolean);
+    return needleWords.every(nw => {
+      // Each query word must fuzzy-match at least one hay word
+      return hayWords.some(hw => {
+        if (hw.includes(nw)) return true;
+        // Only compare words of similar length (within tolerance)
+        if (Math.abs(hw.length - nw.length) > maxDist) return false;
+        return editDistance(nw, hw) <= maxDist;
+      });
+    });
+  }
+
+  function editDistance(a, b) {
+    const m = a.length, n = b.length;
+    if (Math.abs(m - n) > 2) return 99;
+    const dp = Array.from({length: m + 1}, (_, i) => {
+      const row = new Array(n + 1).fill(0);
+      row[0] = i;
+      return row;
+    });
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]
+          : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    return dp[m][n];
+  }
+
   function getFiltered() {
     const q = state.q.toLowerCase().trim();
     return DATA.submissions.filter(s => {
       if (state.event && s.event !== state.event) return false;
       if (state.year && String(s.year) !== state.year) return false;
       if (!q) return true;
-      const hay = [s.team, s.film, s.event, s.genre||'', ...s.members, ...s.awards].join(' \u0001 ').toLowerCase();
-      return hay.includes(q);
+      const hay = [s.team, s.film, s.event, s.genre||'', ...s.members, ...s.awards].join(' \x01 ').toLowerCase();
+      return fuzzyContains(hay, q);
     });
   }
 
@@ -2614,9 +2652,10 @@
     function nameMatchScore(name) {
       if (!searchQ) return 0;
       const n = name.toLowerCase();
-      if (n === searchQ) return 2;          // exact match → highest
-      if (n.includes(searchQ)) return 1;    // partial match → above non-matches
-      return 0;                             // no match in name
+      if (n === searchQ) return 3;                    // exact match
+      if (n.includes(searchQ)) return 2;              // exact substring
+      if (fuzzyContains(n, searchQ)) return 1;        // fuzzy match in name
+      return 0;                                       // match only via other fields
     }
 
     if ((kind === 'member' || kind === 'team') && state.sort === 'trophies') {
