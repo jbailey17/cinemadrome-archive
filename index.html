@@ -2607,28 +2607,40 @@
     if (!counts.size) return `<div class="empty">Nothing matches.</div>`;
 
     let entries = [...counts.entries()];
+
+    // When searching, compute a name-match score so that entries whose name
+    // contains the query bubble to the top, regardless of the active sort.
+    const searchQ = state.q.toLowerCase().trim();
+    function nameMatchScore(name) {
+      if (!searchQ) return 0;
+      const n = name.toLowerCase();
+      if (n === searchQ) return 2;          // exact match → highest
+      if (n.includes(searchQ)) return 1;    // partial match → above non-matches
+      return 0;                             // no match in name
+    }
+
     if ((kind === 'member' || kind === 'team') && state.sort === 'trophies') {
       entries.sort((a,b) => {
         const aw = subs => subs.reduce((n,s)=>n+s.awards.length,0);
-        return (aw(b[1]) - aw(a[1])) || (b[1].length - a[1].length) || a[0].localeCompare(b[0]);
+        return (nameMatchScore(b[0]) - nameMatchScore(a[0])) || (aw(b[1]) - aw(a[1])) || (b[1].length - a[1].length) || a[0].localeCompare(b[0]);
       });
     } else if (kind === 'team' && state.sort === 'members') {
       entries.sort((a,b) => {
         const mc = subs => new Set(subs.flatMap(s=>s.members)).size;
-        return mc(b[1]) - mc(a[1]) || a[0].localeCompare(b[0]);
+        return (nameMatchScore(b[0]) - nameMatchScore(a[0])) || mc(b[1]) - mc(a[1]) || a[0].localeCompare(b[0]);
       });
     } else if ((kind === 'member' || kind === 'team') && state.sort === 'films') {
-      entries.sort((a,b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
     } else if (state.sort === 'az') {
-      entries.sort((a,b) => a[0].localeCompare(b[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || a[0].localeCompare(b[0]));
     } else if (state.sort === 'za') {
-      entries.sort((a,b) => b[0].localeCompare(a[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || b[0].localeCompare(a[0]));
     } else if (state.sort === 'oldest') {
-      entries.sort((a,b) => Math.min(...a[1].map(s=>subSortKey(s))) - Math.min(...b[1].map(s=>subSortKey(s))) || a[0].localeCompare(b[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || Math.min(...a[1].map(s=>subSortKey(s))) - Math.min(...b[1].map(s=>subSortKey(s))) || a[0].localeCompare(b[0]));
     } else if (state.sort === 'newest') {
-      entries.sort((a,b) => Math.min(...b[1].map(s=>subSortKey(s))) - Math.min(...a[1].map(s=>subSortKey(s))) || a[0].localeCompare(b[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || Math.min(...b[1].map(s=>subSortKey(s))) - Math.min(...a[1].map(s=>subSortKey(s))) || a[0].localeCompare(b[0]));
     } else {
-      entries.sort((a,b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+      entries.sort((a,b) => (nameMatchScore(b[0]) - nameMatchScore(a[0])) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
     }
 
     return `<div class="grid-2">${entries.map(([name, subs]) => {
