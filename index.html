@@ -2685,10 +2685,16 @@
     return `<div class="grid-2">${entries.map(([name, subs]) => {
       const yrs = [...new Set(subs.map(s=>s.year))].sort((a,b)=>b-a);
       const yrRange = yrs.length === 1 ? yrs[0] : `${Math.min(...yrs)}–${Math.max(...yrs)}`;
-      let extra = '';
-      if (kind === 'member' || kind === 'team') {
+     let extra = '';
+      if (kind === 'member') {
         const aw = subs.reduce((n,s)=>n+s.awards.length,0);
-        extra = `${subs.length} film${subs.length>1?'s':''} · ${yrRange}${aw?` · 🏆 ${aw}`:''}`;
+        const teamCount = new Set(subs.map(s=>s.team)).size;
+        const line1 = `${subs.length} film${subs.length>1?'s':''} · ${teamCount} team${teamCount>1?'s':''}${aw?` · 🏆 ${aw}`:''}`;
+        extra = `<div>${line1}</div><div style="margin-top:2px;opacity:0.7">${yrRange}</div>`;
+      } else if (kind === 'team') {
+        const aw = subs.reduce((n,s)=>n+s.awards.length,0);
+        const line1 = `${subs.length} film${subs.length>1?'s':''}${aw?` · 🏆 ${aw}`:''}`;
+        extra = `<div>${line1}</div><div style="margin-top:2px;opacity:0.7">${yrRange}</div>`;
       } else if (kind === 'award') {
         extra = `${subs.length} winner${subs.length>1?'s':''} · ${yrRange}`;
       }
