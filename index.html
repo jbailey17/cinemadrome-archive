@@ -85,6 +85,7 @@
   .stat .n { font-weight: 700; color: var(--accent); font-size: 16px; }
   .stat .lbl { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
   @media (max-width: 600px) {
+    header { padding-top: 44px; }
     .stats { gap: 12px; margin-top: 10px; flex-wrap: nowrap; }
     .stat .n { font-size: 13px; }
     .stat .lbl { font-size: 10px; letter-spacing: 0.02em; }
@@ -3609,7 +3610,62 @@
       {
         date: 'May 21, 2026',
         items: [
-          'Original archive file (v4.7) established with full film, team, member, event, award, and stats tabs; YouTube view count baking via "Fetch & Lock" button.',
+          'Added "Most viewed films", "Most viewed teams", "Most viewed members", and "Most viewed events" panels to the YouTube section of the Stats tab, populated when view counts are fetched.',
+          'Added YouTube view count "Fetch & Lock" functionality — fetches live view counts from the YouTube Data API and bakes them into the file for instant loading on future opens.',
+          'Added a "Back-to-back members by event" stat panel tracking the longest streak of consecutive events (not just consecutive years).',
+          'Added award-to-film ratio stat for teams in the Stats tab.',
+        ]
+      },
+      {
+        date: 'May 8, 2026',
+        items: [
+          'Improved member search result ordering — when searching, results whose names contain the search term now appear first, before other partial matches.',
+          'Fixed mobile drawer scroll bleed-through: scrolling at the top of an open drawer no longer scrolls the page behind it.',
+          'Added a frosted glass safe-area cap at the top of the drawer on mobile to cover the status bar / notch area.',
+          'Fixed page scroll position jumping when closing a drawer on mobile — the page now returns to exactly where it was.',
+          'Added swipe-right-to-close and swipe-back-through-history gesture for drawers on mobile.',
+          'Added a sticky title bar inside the drawer that fades in when you scroll past the main heading.',
+        ]
+      },
+      {
+        date: 'May 7, 2026',
+        items: [
+          'Made the archive publishable as a website via GitHub Pages.',
+          'Added YouTube playlist button to each event drawer, linking directly to the corresponding Cinemadrome YouTube playlist.',
+          'Added poster-derived color theming to drawers — when opening an event, team, or film drawer, the UI colors shift to match the poster or thumbnail.',
+          'Film drawers now apply color theming derived from the YouTube thumbnail.',
+          'Added full drawer navigation history with a ← Back button and swipe-back support, allowing navigation from team → member → film and back.',
+          'Added member chip clicks inside team drawers to open individual member drawers.',
+        ]
+      },
+      {
+        date: 'May 3, 2026',
+        items: [
+          'Added Stats tab with panels for: most prolific members and teams, longest-running teams, most decorated teams, most awarded members, members on most different teams, back-to-back teams and members by consecutive year, films per year chart, and new members per year chart.',
+          'Added event poster thumbnails to the Events tab grid cards.',
+          'Added event month/year metadata so events sort correctly by month within a year.',
+          'Added "Load images" file input button (later removed) for loading a sidecar JSON with event, team, and member images.',
+          'Embedded event poster images directly as URLs in the data, removing the need for the sidecar JSON.',
+        ]
+      },
+      {
+        date: 'May 1, 2026',
+        items: [
+          'Fixed search function — search now correctly filters films, teams, members, and awards as you type.',
+          'Added sort options for trophies, most films, most members, A→Z, Z→A, oldest, and newest.',
+          'Added "The" and "ARCHIVE" text to the header logo, flanking the Cinemadrome image.',
+          'Styled header logo text to match the site\'s gold accent color, centered and sized to complement the Cinemadrome logo image.',
+          'Removed the "over a decade of backyard cinema" tagline from the header.',
+          'Adjusted spacing between "THE", the logo image, and "ARCHIVE" in the header.',
+          'Removed italic styling from "THE" and "ARCHIVE" header words.',
+          'Made "THE" and "ARCHIVE" smaller so the Cinemadrome logo image stands out more.',
+          'Applied a color filter to the Cinemadrome logo image to match the site\'s gold/amber color scheme.',
+        ]
+      },
+      {
+        date: 'Apr 2026',
+        items: [
+          'Original archive built — Films, Events, Teams, Members, and Awards tabs with search, filters, and sort. Drawer-based detail views for all entity types.',
         ]
       }
     ];
