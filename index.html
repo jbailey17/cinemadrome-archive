@@ -31,6 +31,34 @@
   a { color: var(--accent); text-decoration: none; }
   @media (hover: hover) { a:hover { text-decoration: underline; } }
   @media (hover: hover) { #version-btn:hover { color: var(--text); border-color: var(--border-strong); } }
+
+  /* ── Feedback button ── */
+  #feedback-btn {
+    position: absolute; top: 10px; left: 12px;
+    background: none; border: 1px solid rgba(255,181,71,0.4);
+    color: var(--accent); font-size: 11px; font-weight: 600;
+    padding: 3px 8px 3px 6px; border-radius: 10px; cursor: pointer;
+    letter-spacing: 0.03em; z-index: 2;
+    display: flex; align-items: center; gap: 4px;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  @media (hover: hover) {
+    #feedback-btn:hover { background: rgba(255,181,71,0.08); border-color: var(--accent); text-decoration: none; }
+  }
+  #feedback-btn .fb-star {
+    display: inline-block; font-size: 12px; line-height: 1;
+    animation: fb-sparkle 2.4s ease-in-out infinite;
+    transform-origin: center;
+  }
+  #feedback-btn .fb-star:nth-child(2) { animation-delay: 0.8s; }
+  #feedback-btn .fb-star:nth-child(3) { animation-delay: 1.6s; }
+  @keyframes fb-sparkle {
+    0%   { opacity: 0.25; transform: scale(0.7) rotate(0deg); }
+    30%  { opacity: 1;    transform: scale(1.25) rotate(20deg); }
+    60%  { opacity: 0.6;  transform: scale(0.9) rotate(-10deg); }
+    100% { opacity: 0.25; transform: scale(0.7) rotate(0deg); }
+  }
   button { font: inherit; cursor: pointer; }
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -718,6 +746,11 @@
 </head>
 <body style="">
 <header style="position:relative">
+  <a id="feedback-btn" href="https://forms.gle/ppsBmAiLdGxstd6eA" target="_blank" rel="noopener" aria-label="Submit feedback">
+    <span class="fb-star">✦</span>
+    Feedback
+    <span class="fb-star">✦</span>
+  </a>
   <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.1</button>
   <div class="brand">
     <button id="home-btn" onclick="document.querySelector('.tab[data-view=\u0022events\u0022]').click();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;-webkit-tap-highlight-color:transparent;">
@@ -3562,14 +3595,15 @@
       {
         date: 'May 22, 2026',
         items: [
-          'Stat panel rows (teams, members, awards, events) are now clickable inside stat drawers — clicking a name opens that entity\'s full rollup drawer, with back-navigation support.',
-          'Added "See all ›" label and click-to-drawer functionality for YouTube stats panels (Most viewed films, teams, members, and events). Clicking a YT panel opens a full ranked list drawer with all entries.',
-          'Stat panels now animate on hover (border highlight + lift) and on mobile press, matching the behaviour of film cards.',
-          'Clicking any stat panel (e.g. "Most prolific members") opens a drawer showing the complete full list with no entry cap.',
-          'Added "Most new views since last refresh" chart to the YouTube stats section — shows top 30 films by views gained since the previous lock, with green bar chart.',
-          'Most viewed teams, members, and events lists expanded from top 10 to top 15.',
-          'Added a separate "↓ Refresh & Download" button next to the refresh button. "↻ Refresh" now only updates view counts in-page without downloading a file; "Refresh & Download" retains the original bake-and-download behaviour.',
+          'Added a Feedback button in the top-left corner of the header with a sparkle animation. Clicking it opens a Google Form for submitting comments and feature requests.',
           'Added version badge (v1.1) in the top-right corner of the header. Clicking it opens this changelog drawer.',
+          'Added a separate "↓ Refresh & Download" button next to the refresh button. "↻ Refresh" now only updates view counts in-page without downloading a file; "Refresh & Download" retains the original bake-and-download behaviour.',
+          'Most viewed teams, members, and events lists expanded from top 10 to top 15.',
+          'Added "Most new views since last refresh" chart to the YouTube stats section — shows top 30 films by views gained since the previous lock, with green bar chart.',
+          'Clicking any stat panel (e.g. "Most prolific members") opens a drawer showing the complete full list with no entry cap.',
+          'Stat panels now animate on hover (border highlight + lift) and on mobile press, matching the behaviour of film cards.',
+          'Added "See all ›" label and click-to-drawer functionality for YouTube stats panels (Most viewed films, teams, members, and events). Clicking a YT panel opens a full ranked list drawer with all entries.',
+          'Stat panel rows (teams, members, awards, events) are now clickable inside stat drawers — clicking a name opens that entity\'s full rollup drawer, with back-navigation support.',
         ]
       },
       {
