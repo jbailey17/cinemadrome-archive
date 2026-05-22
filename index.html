@@ -643,6 +643,14 @@
     background: var(--bg-elev); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 16px 18px;
   }
+  .panel[data-stat], .panel[data-yt-stat] {
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  @media (hover: hover) {
+    .panel[data-stat]:hover, .panel[data-yt-stat]:hover {
+      border-color: var(--border-strong); transform: translateY(-2px);
+    }
+  }
   .panel h3 { margin: 0 0 12px; font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
   .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
   .leader { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
@@ -703,6 +711,7 @@
     .leader:active                         { color: var(--accent); }
     .event-card:active                     { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
     .youtube-button:active                 { background: #cc0000; transform: translateY(-1px); }
+    .panel[data-stat]:active, .panel[data-yt-stat]:active { border-color: var(--border-strong); transform: translateY(-2px); }
   }
 </style>
 </head>
@@ -1836,9 +1845,9 @@
         </div>
         <div class="ct" style="white-space:nowrap">1,202</div>
       </div></div>
-          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px">↻ Refresh &amp; re-lock</button>
-            <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px">&#8659; Refresh &amp; Download</button>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">↻ Refresh</button>
+            <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
           </div>
         </div>
 
@@ -2821,9 +2830,50 @@
       </div>`;
     }
 
+    // Store full (unsliced) data for stat drawers
+    function fullMap(getter) {
+      const m = new Map();
+      for (const s of filtered) for (const v of getter(s)) m.set(v, (m.get(v)||0)+1);
+      return [...m.entries()].sort((a,b)=>b[1]-a[1]);
+    }
+    // Full longestTeams (no slice)
+    const _fullLongestTeams = [...teamYears.entries()].map(([t,yrs])=>{ const sr=[...yrs].sort((a,b)=>a-b); return [t,sr.length,sr[0],sr[sr.length-1]]; }).sort((a,b)=>b[1]-a[1]||a[2]-b[2]);
+    // Full longestActive (no slice)
+    const _fullLongestActive = [...memberYearSpan.entries()].map(([n,{min,max}])=>[n,max-min,min,max]).filter(([,sp])=>sp>0).sort((a,b)=>b[1]-a[1]||a[2]-b[2]);
+    // Full trophyTeams (no slice)
+    const _fullTrophyTeams = [...teamTrophies.entries()].filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+    // Full awardMembers (no slice)
+    const _fullAwardMembers = [...memberAwards.entries()].filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+    // Full mostTeams (no slice)
+    const _fullMostTeams = [...memberTeams.entries()].filter(([,t])=>t.size>1).map(([n,t])=>[n,t.size]).sort((a,b)=>b[1]-a[1]);
+    // Full streaks
+    const _fullTeamStreaks  = [...teamStreaks.entries()].sort((a,b)=>b[1]-a[1]);
+    const _fullMemberStreaks = [...memberStreaks.entries()].sort((a,b)=>b[1]-a[1]);
+    const _fullMemberEventStreaks = [...memberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]);
+
+    _statDrawerData = {
+      topMembers:            { rows: fullMap(s=>s.members),    kind:'member', labelFn: n => n+' film'+(n>1?'s':'') },
+      topTeams:              { rows: fullMap(s=>[s.team]),      kind:'team',   labelFn: n => n+' film'+(n>1?'s':'') },
+      longestTeams:          { rows: _fullLongestTeams,         kind:'team',   type:'longestTeams' },
+      longestActive:         { rows: _fullLongestActive,        kind:'member', type:'longestActive' },
+      topTrophyTeams:        { rows: _fullTrophyTeams,          kind:'team',   labelFn: n => n+' trophy'+(n>1?'s':'') },
+      topAwardMembers:       { rows: _fullAwardMembers,         kind:'member', labelFn: n => n+' trophy'+(n>1?'s':'') },
+      topAwards:             { rows: fullMap(s=>s.awards),      kind:'award',  labelFn: n => n+' winner'+(n>1?'s':'') },
+      mostTeams:             { rows: _fullMostTeams,            kind:'member', labelFn: n => n+' team'+(n>1?'s':'') },
+      topTeamStreaks:        { rows: _fullTeamStreaks,           kind:'team',   labelFn: n => n+' in a row' },
+      topMemberStreaks:      { rows: _fullMemberStreaks,         kind:'member', labelFn: n => n+' in a row' },
+      topMemberEventStreaks: { rows: _fullMemberEventStreaks,    kind:'member', labelFn: n => n+' in a row' },
+    };
+
     setTimeout(() => {
-      document.querySelectorAll('.leader').forEach(el =>
+      document.querySelectorAll('.leader[data-kind]').forEach(el =>
         el.addEventListener('click', () => openRollup(el.dataset.kind, el.dataset.key))
+      );
+      document.querySelectorAll('.panel[data-stat]').forEach(panel =>
+        panel.addEventListener('click', e => {
+          if (e.target.closest('.leader[data-kind]')) return;
+          openStatDrawer(panel.dataset.stat, panel.querySelector('h3').textContent.trim());
+        })
       );
     }, 0);
 
@@ -2835,29 +2885,29 @@
 
         ${section('Prolific &amp; long-running')}
 
-        <div class="panel"><h3>Most prolific members</h3>${rankedLeader(topMembers,'member', n => n+' film'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Most prolific teams</h3>${rankedLeader(topTeams,'team', n => n+' film'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Longest-running teams</h3>${longestTeams.map(([name,yrsCount,first,last],i)=>medalRow(name,yrsCount,first,last,'team',i)).join('')}</div>
-        <div class="panel"><h3>Longest active members</h3>${longestActive.map(([name,span,first,last],i)=>medalRow(name,span,first,last,'member',i)).join('')}</div>
+        <div class="panel" data-stat="topMembers" style="cursor:pointer"><h3>Most prolific members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topMembers,'member', n => n+' film'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="topTeams" style="cursor:pointer"><h3>Most prolific teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topTeams,'team', n => n+' film'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="longestTeams" style="cursor:pointer"><h3>Longest-running teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${longestTeams.map(([name,yrsCount,first,last],i)=>medalRow(name,yrsCount,first,last,'team',i)).join('')}</div>
+        <div class="panel" data-stat="longestActive" style="cursor:pointer"><h3>Longest active members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${longestActive.map(([name,span,first,last],i)=>medalRow(name,span,first,last,'member',i)).join('')}</div>
 
         ${section('Awards &amp; trophies')}
 
-        <div class="panel"><h3>Most decorated teams 🏆</h3>${rankedLeader(topTrophyTeams,'team', n => n+' trophy'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Most awarded members 🏆</h3>${rankedLeader(topAwardMembers,'member', n => n+' trophy'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Most awarded categories</h3>${rankedLeader(topAwards,'award', n => n+' winner'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="topTrophyTeams" style="cursor:pointer"><h3>Most decorated teams 🏆 <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topTrophyTeams,'team', n => n+' trophy'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="topAwardMembers" style="cursor:pointer"><h3>Most awarded members 🏆 <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwardMembers,'member', n => n+' trophy'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="topAwards" style="cursor:pointer"><h3>Most awarded categories <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwards,'award', n => n+' winner'+(n>1?'s':''))}</div>
 
         ${section('Connections &amp; streaks')}
 
-        <div class="panel"><h3>Members on most different teams</h3>${rankedLeader(mostTeams,'member', n => n+' team'+(n>1?'s':''))}</div>
-        <div class="panel"><h3>Back-to-back teams</h3>
+        <div class="panel" data-stat="mostTeams" style="cursor:pointer"><h3>Members on most different teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(mostTeams,'member', n => n+' team'+(n>1?'s':''))}</div>
+        <div class="panel" data-stat="topTeamStreaks" style="cursor:pointer"><h3>Back-to-back teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
           <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Longest streak of consecutive calendar years</div>
           ${b2bTeamHtml}
         </div>
-        <div class="panel"><h3>Back-to-back members</h3>
+        <div class="panel" data-stat="topMemberStreaks" style="cursor:pointer"><h3>Back-to-back members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
           <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Longest streak of consecutive calendar years</div>
           ${b2bMemberHtml}
         </div>
-        <div class="panel"><h3>Back-to-back members by event</h3>
+        <div class="panel" data-stat="topMemberEventStreaks" style="cursor:pointer"><h3>Back-to-back members by event <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
           <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Longest streak of consecutive events (regardless of year gaps)</div>
           ${b2bMemberEventHtml}
         </div>
@@ -2879,11 +2929,11 @@
           <div id="yt-views-list">
             ${YT_BAKED ? '' : '<div style="color:var(--text-faint);font-size:13px">Click “Fetch &amp; Lock” to load YouTube view counts and bake them into this file.</div>'}
           </div>
-          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-            <button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px">
-              ${YT_BAKED ? '&#8635; Refresh &amp; re-lock' : '&#9654; Fetch &amp; Lock view counts'}
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">
+              ${YT_BAKED ? '&#8635; Refresh' : '&#9654; Fetch &amp; Lock view counts'}
             </button>
-            <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px">&#8659; Refresh &amp; Download</button>
+            <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
           </div>
         </div>
 
@@ -2991,7 +3041,7 @@
       if (!p) return;
       const top = [...totalsMap.entries()]
         .sort((a, b) => b[1].views - a[1].views)
-        .slice(0, 10);
+        .slice(0, 15);
       if (!top.length) { p.innerHTML = '<div style="color:var(--text-faint);font-size:13px">No data.</div>'; return; }
       p.innerHTML = top.map(([key, { views, origViews, films, displayName }], i) => {
         const label = displayNameFn ? displayNameFn(key, displayName) : key;
@@ -3013,6 +3063,46 @@
     renderRollupViews('yt-team-views-list', teamTotals, 'team');
     renderRollupViews('yt-member-views-list', memberTotals, 'member');
     renderRollupViews('yt-event-views-list', eventTotals, 'event', (key, displayName) => displayName);
+
+    // Store full (unsliced) sorted data for YT stat drawers
+    const _sortedFilms = subs
+      .filter(s => s.video_id && viewMap[s.video_id] !== undefined)
+      .map(s => ({ s, views: viewMap[s.video_id], origViews: originalMap ? originalMap[s.video_id] : undefined }))
+      .sort((a, b) => b.views - a.views);
+    _ytDrawerData = {
+      films:   { list: _sortedFilms, kind: 'films' },
+      teams:   { list: [...teamTotals.entries()].sort((a,b)=>b[1].views-a[1].views), kind: 'team' },
+      members: { list: [...memberTotals.entries()].sort((a,b)=>b[1].views-a[1].views), kind: 'member' },
+      events:  { list: [...eventTotals.entries()].sort((a,b)=>b[1].views-a[1].views), kind: 'event',
+                 displayNameFn: (key, displayName) => displayName },
+    };
+
+    // Wire panel-level clicks for YT stat drawers (click outside a leader row opens the full list)
+    setTimeout(() => {
+      const ytPanelMap = {
+        'yt-views-panel':        { key: 'films',   title: 'Most viewed films' },
+        'yt-team-views-panel':   { key: 'teams',   title: 'Most viewed teams' },
+        'yt-member-views-panel': { key: 'members', title: 'Most viewed members' },
+        'yt-event-views-panel':  { key: 'events',  title: 'Most viewed events' },
+      };
+      for (const [id, { key, title }] of Object.entries(ytPanelMap)) {
+        const panel = document.getElementById(id);
+        if (!panel) continue;
+        panel.dataset.ytStat = key;
+        panel.style.cursor = 'pointer';
+        // Add "See all ›" to the h3 if not already there
+        const h3 = panel.querySelector('h3');
+        if (h3 && !h3.querySelector('.yt-see-all')) {
+          h3.insertAdjacentHTML('beforeend', '<span class="yt-see-all" style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span>');
+        }
+        panel.addEventListener('click', e => {
+          if (e.target.closest('.leader[data-id]')) return;
+          if (e.target.closest('.leader[data-kind]')) return;
+          if (e.target.closest('button')) return;
+          openYtStatDrawer(key, title);
+        });
+      }
+    }, 0);
 
     // --- New views chart (top 30 by delta) ---
     if (originalMap) {
@@ -3102,7 +3192,7 @@
       }
     } catch(e) {
       if (list) list.innerHTML = `<div style="color:var(--accent-2);font-size:13px">Error: ${e.message}</div>`;
-      if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.innerHTML = '&#8635; Refresh &amp; re-lock'; }
+      if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.innerHTML = '&#8635; Refresh'; }
       if (dlBtn) { dlBtn.disabled = false; }
       return null;
     }
@@ -3112,7 +3202,7 @@
     const originalViews = (YT_BAKED && YT_BAKED.views) ? YT_BAKED.views : null;
     renderYtViews(DATA.submissions, viewMap, originalViews);
     if (meta) meta.textContent = 'Last updated ' + fetched;
-    if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.innerHTML = '&#8635; Refresh &amp; re-lock'; }
+    if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.innerHTML = '&#8635; Refresh'; }
     if (dlBtn) { dlBtn.disabled = false; }
 
     return { viewMap, fetched };
@@ -3367,12 +3457,113 @@
   }
 
   const drawerHistory = [];
+  let _statDrawerData = {};
+  let _ytDrawerData = {};
+
+  function openStatDrawer(statKey, title) {
+    const d = _statDrawerData[statKey];
+    if (!d) return;
+    const medals = ['🥇','🥈','🥉'];
+    const { rows, kind, labelFn, type } = d;
+
+    let rowsHtml;
+    if (type === 'longestTeams' || type === 'longestActive') {
+      rowsHtml = rows.map(([name, yrsCount, first, last], i) => `
+        <div class="leader" data-kind="${kind}" data-key="${esc(name)}">
+          <div class="u-flex-center">
+            <span class="u-rank-cell">${medals[i] || `<span style="color:var(--text-faint);font-size:11px">${i+1}</span>`}</span>
+            <div class="u-ellipsis">${esc(name)}</div>
+          </div>
+          <div class="ct" style="text-align:right;white-space:nowrap">
+            <span class="u-rank-num">${first}–${last}&nbsp;</span>${yrsCount} yr${yrsCount>1?'s':''}
+          </div>
+        </div>`).join('');
+    } else {
+      rowsHtml = rows.map(([name, n], i) => `
+        <div class="leader" data-kind="${kind}" data-key="${esc(name)}">
+          <div class="u-flex-center">
+            <span class="u-rank-cell">${medals[i] || `<span class="u-rank-num">${i+1}</span>`}</span>
+            <div class="u-ellipsis">${esc(name)}</div>
+          </div>
+          <div class="ct">${labelFn ? labelFn(n) : n}</div>
+        </div>`).join('');
+    }
+
+    const html = `
+      <div class="body">
+        <h2>${esc(title)}</h2>
+        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:16px">${rows.length} ${kind === 'award' ? 'categories' : kind + 's'}</div>
+        ${rowsHtml}
+      </div>`;
+    showDrawer(html, { type: 'stat', statKey, title });
+    wireDrawer();
+    resetDrawerTheme();
+  }
+
+  function openYtStatDrawer(ytKey, title) {
+    const d = _ytDrawerData[ytKey];
+    if (!d) return;
+    const medals = ['🥇','🥈','🥉'];
+    const { list, kind, displayNameFn } = d;
+
+    let rowsHtml;
+    if (kind === 'films') {
+      rowsHtml = list.map(({ s, views, origViews }, i) => {
+        const diff = (origViews !== undefined && origViews !== null) ? views - origViews : 0;
+        const deltaStr = diff > 0 ? ` <span style="color:#6ee7b7;font-size:11px;font-weight:600">+${diff.toLocaleString()}</span>` : '';
+        return `
+        <div class="leader" data-id="${s.id}" style="cursor:pointer">
+          <div class="u-flex-center">
+            <span class="u-rank-cell">${medals[i] || `<span class="u-rank-num">${i+1}</span>`}</span>
+            <div style="min-width:0">
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${esc(s.film||'Untitled')}</div>
+              <div style="font-size:11px;color:var(--text-faint)">${esc(s.display_team||s.team)} · ${s.year}</div>
+            </div>
+          </div>
+          <div class="ct" style="white-space:nowrap">${views.toLocaleString()}${deltaStr}</div>
+        </div>`;
+      }).join('');
+    } else {
+      rowsHtml = list.map(([key, data], i) => {
+        const { views, origViews, films } = data;
+        const label = displayNameFn ? displayNameFn(key, data.displayName || key) : key;
+        const diff = (origViews !== null && origViews !== undefined) ? views - origViews : 0;
+        const deltaStr = diff > 0 ? ` <span style="color:#6ee7b7;font-size:11px;font-weight:600">+${diff.toLocaleString()}</span>` : '';
+        return `
+        <div class="leader" data-kind="${kind}" data-key="${esc(key)}" style="cursor:pointer">
+          <div class="u-flex-center">
+            <span class="u-rank-cell">${medals[i] || `<span class="u-rank-num">${i+1}</span>`}</span>
+            <div class="u-ellipsis">${esc(label)}</div>
+          </div>
+          <div class="ct" style="text-align:right;white-space:nowrap">
+            <span class="u-rank-num">${films} film${films>1?'s':''}&nbsp;</span>${views.toLocaleString()}${deltaStr}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    const count = list.length;
+    const subtitle = kind === 'films' ? `${count} film${count!==1?'s':''}` : `${count} ${kind}${count!==1?'s':''}`;
+    const html = `
+      <div class="body">
+        <h2>${esc(title)}</h2>
+        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:16px">${subtitle}</div>
+        ${rowsHtml}
+      </div>`;
+    showDrawer(html, { type: 'ytStat', ytKey, title });
+    wireDrawer();
+    resetDrawerTheme();
+  }
 
   function wireDrawer() {
     document.querySelectorAll('#drawer-body .card[data-id]').forEach(el =>
       el.addEventListener('click', () => openSubmission(+el.dataset.id)));
     document.querySelectorAll('#drawer-body .mini-card[data-id]').forEach(el =>
       el.addEventListener('click', () => openSubmission(+el.dataset.id)));
+    document.querySelectorAll('#drawer-body .leader[data-id]').forEach(el =>
+      el.addEventListener('click', () => openSubmission(+el.dataset.id)));
+    document.querySelectorAll('#drawer-body .leader[data-kind]').forEach(el =>
+      el.addEventListener('click', () => openRollup(el.dataset.kind, el.dataset.key)));
     document.querySelectorAll('#drawer-body .member-chip').forEach(el =>
       el.addEventListener('click', () => openRollup('member', el.dataset.member)));
     document.querySelectorAll('#drawer-body .team-link[data-team]').forEach(el =>
@@ -3466,6 +3657,8 @@
     drawerHistory.pop(); // remove current page
     const prev = drawerHistory.pop(); // remove destination (will be re-pushed by open fn)
     if (prev.type === 'submission') openSubmission(prev.id);
+    else if (prev.type === 'stat') openStatDrawer(prev.statKey, prev.title);
+    else if (prev.type === 'ytStat') openYtStatDrawer(prev.ytKey, prev.title);
     else openRollup(prev.kind, prev.key);
   });
 
@@ -3842,6 +4035,8 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
           drawerHistory.pop(); // remove current page
           const prev = drawerHistory.pop(); // remove destination (will be re-pushed by open fn)
           if (prev.type === 'submission') openSubmission(prev.id);
+          else if (prev.type === 'stat') openStatDrawer(prev.statKey, prev.title);
+          else if (prev.type === 'ytStat') openYtStatDrawer(prev.ytKey, prev.title);
           else openRollup(prev.kind, prev.key);
         }, 260);
       } else {
