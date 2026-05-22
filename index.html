@@ -30,6 +30,7 @@
   }
   a { color: var(--accent); text-decoration: none; }
   @media (hover: hover) { a:hover { text-decoration: underline; } }
+  @media (hover: hover) { #version-btn:hover { color: var(--text); border-color: var(--border-strong); } }
   button { font: inherit; cursor: pointer; }
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -716,7 +717,8 @@
 </style>
 </head>
 <body style="">
-<header>
+<header style="position:relative">
+  <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.1</button>
   <div class="brand">
     <button id="home-btn" onclick="document.querySelector('.tab[data-view=\u0022events\u0022]').click();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;-webkit-tap-highlight-color:transparent;">
     <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:100%">
@@ -3555,6 +3557,48 @@
     resetDrawerTheme();
   }
 
+  function openChangelog() {
+    const changes = [
+      {
+        date: 'May 22, 2026',
+        items: [
+          'Stat panel rows (teams, members, awards, events) are now clickable inside stat drawers — clicking a name opens that entity\'s full rollup drawer, with back-navigation support.',
+          'Added "See all ›" label and click-to-drawer functionality for YouTube stats panels (Most viewed films, teams, members, and events). Clicking a YT panel opens a full ranked list drawer with all entries.',
+          'Stat panels now animate on hover (border highlight + lift) and on mobile press, matching the behaviour of film cards.',
+          'Clicking any stat panel (e.g. "Most prolific members") opens a drawer showing the complete full list with no entry cap.',
+          'Added "Most new views since last refresh" chart to the YouTube stats section — shows top 30 films by views gained since the previous lock, with green bar chart.',
+          'Most viewed teams, members, and events lists expanded from top 10 to top 15.',
+          'Added a separate "↓ Refresh & Download" button next to the refresh button. "↻ Refresh" now only updates view counts in-page without downloading a file; "Refresh & Download" retains the original bake-and-download behaviour.',
+          'Added version badge (v1.1) in the top-right corner of the header. Clicking it opens this changelog drawer.',
+        ]
+      },
+      {
+        date: 'May 21, 2026',
+        items: [
+          'Original archive file (v4.7) established with full film, team, member, event, award, and stats tabs; YouTube view count baking via "Fetch & Lock" button.',
+        ]
+      }
+    ];
+
+    const html = `
+      <div class="body">
+        <h2>Changelog</h2>
+        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.1</span></div>
+        ${changes.map(({ date, items }) => `
+          <div style="margin-bottom:24px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:600;margin-bottom:10px">${esc(date)}</div>
+            ${items.map(item => `
+              <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+                <span style="color:var(--accent);flex-shrink:0;margin-top:1px">·</span>
+                <span style="color:var(--text-dim);font-size:13px;line-height:1.5">${esc(item)}</span>
+              </div>`).join('')}
+          </div>`).join('')}
+      </div>`;
+    showDrawer(html, { type: 'changelog' });
+    wireDrawer();
+    resetDrawerTheme();
+  }
+
   function wireDrawer() {
     document.querySelectorAll('#drawer-body .card[data-id]').forEach(el =>
       el.addEventListener('click', () => openSubmission(+el.dataset.id)));
@@ -3659,6 +3703,7 @@
     if (prev.type === 'submission') openSubmission(prev.id);
     else if (prev.type === 'stat') openStatDrawer(prev.statKey, prev.title);
     else if (prev.type === 'ytStat') openYtStatDrawer(prev.ytKey, prev.title);
+    else if (prev.type === 'changelog') openChangelog();
     else openRollup(prev.kind, prev.key);
   });
 
@@ -3958,6 +4003,7 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
   $('close-drawer').addEventListener('click', closeDrawer);
   $('scrim').addEventListener('click', closeDrawer);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+  document.getElementById('version-btn').addEventListener('click', openChangelog);
 
   // ── Swipe-right to go back / close, with live drag animation ─────────────
   (function () {
@@ -4037,6 +4083,7 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
           if (prev.type === 'submission') openSubmission(prev.id);
           else if (prev.type === 'stat') openStatDrawer(prev.statKey, prev.title);
           else if (prev.type === 'ytStat') openYtStatDrawer(prev.ytKey, prev.title);
+          else if (prev.type === 'changelog') openChangelog();
           else openRollup(prev.kind, prev.key);
         }, 260);
       } else {
