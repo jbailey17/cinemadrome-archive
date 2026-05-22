@@ -683,10 +683,10 @@
   }
   .panel h3 { margin: 0 0 12px; font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
   .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-  .leader { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .leader { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; min-width: 0; overflow: hidden; }
   .leader:last-child { border-bottom: 0; }
   @media (hover: hover) { .leader:hover { color: var(--accent); } }
-  .leader .ct { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .leader .ct { color: var(--text-dim); font-variant-numeric: tabular-nums; flex-shrink: 0; padding-left: 8px; }
   .bar { height: 8px; background: var(--bg-elev-2); border-radius: 4px; overflow: hidden; margin-top: 4px; }
   .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), #ff8a4c); }
 
@@ -822,7 +822,7 @@
     Feedback
     <span class="fb-star">✦</span>
   </a>
-  <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.2</button>
+  <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.3</button>
   <div class="brand">
     <button id="home-btn" onclick="document.querySelector('.tab[data-view=\u0022events\u0022]').click();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;-webkit-tap-highlight-color:transparent;">
     <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:100%">
@@ -4023,7 +4023,7 @@
     const blob = new Blob([updatedHtml], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    const versionText = (document.getElementById('version-btn')?.textContent || 'v1.2').trim().replace(/\s+/g, '');
+    const versionText = (document.getElementById('version-btn')?.textContent || 'v1.3').trim().replace(/\s+/g, '');
     const now2 = new Date();
     const dateStr = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}-${String(now2.getDate()).padStart(2,'0')}`;
     a.download = `Cinemadrome_Archive_${versionText}_${dateStr}.html`;
@@ -4348,6 +4348,13 @@
     const changes = [
       {
         date: 'May 22, 2026',
+        version: 'v1.3',
+        items: [
+          'Fixed swipe conflict in the Stats tab on mobile: swiping inside a stat panel carousel (e.g. Prolific & Long-Running) now only moves between panels within that group. Previously, swiping left through panels would also trigger the tab-switching swipe gesture. Swipes that begin outside a carousel still navigate between tabs as expected.',
+        ]
+      },
+      {
+        date: 'May 22, 2026',
         version: 'v1.2',
         items: [
           'Clicking a name row inside a stat drawer now opens that team\'s, member\'s, or award\'s full rollup drawer, with back-navigation support.',
@@ -4437,7 +4444,7 @@
     const html = `
       <div class="body">
         <h2>Changelog</h2>
-        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.2</span></div>
+        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.3</span></div>
         ${changes.map(({ date, version, items }) => `
           <div style="margin-bottom:24px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -5116,10 +5123,14 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
 
     // ── touch handlers ──────────────────────────────────────────────────────
 
+    let touchInCarousel = false;  // true when the touch started inside a stat-carousel
+
     document.addEventListener('touchstart', function (e) {
       if ($('drawer').classList.contains('open')) return;
       if (e.target.closest('#tabs')) return;
       if (active) return;
+      // If the touch starts inside a stat-carousel, let the carousel handle it
+      touchInCarousel = !!e.target.closest('.stat-carousel');
       const t = e.touches[0];
       sx = t.clientX;
       sy = t.clientY;
@@ -5131,6 +5142,7 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
 
     document.addEventListener('touchmove', function (e) {
       if ($('drawer').classList.contains('open')) return;
+      if (touchInCarousel) return;  // let the carousel's own handler take it
       if (locked === 'v' || locked === 'edge') return;
 
       const t  = e.touches[0];
@@ -5178,6 +5190,7 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
     }, { passive: false });
 
     document.addEventListener('touchend', function (e) {
+      touchInCarousel = false;
       if (!active || locked !== 'h') { active = false; return; }
 
       const t   = e.changedTouches[0];
@@ -5212,6 +5225,7 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
     }, { passive: true });
 
     document.addEventListener('touchcancel', function () {
+      touchInCarousel = false;
       if (active) snapBack();
     }, { passive: true });
 
