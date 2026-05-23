@@ -28,7 +28,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:3;pointer-events:auto">v1.8</button>
+<button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:3;pointer-events:auto">v1.9</button>
 <div class="brand">
 <button id="home-btn" onclick="location.reload();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -2940,6 +2940,14 @@ function openChangelog(){
 const changes = [
 {
 date: '2026-05-23',
+version: 'v1.9',
+items: [
+'Feedback button now stays collapsed when a drawer is open, preventing it from expanding over drawer content. Implemented via a MutationObserver watching each drawer for class changes.',
+'Stats panel carousels on mobile now respond to much lighter gestures. Commit threshold reduced from 28% to 12% of panel width, velocity-based snapping added so a quick flick advances the panel even with minimal drag distance, and horizontal intent is detected sooner.',
+]
+},
+{
+date: '2026-05-23',
 version: 'v1.8',
 items: [
 'Fixed Feedback button being obscured by the sticky nav bar when scrolling. A duplicate z-index declaration in the CSS was overriding the intended value, causing the button to render beneath the filters and tabs.',
@@ -3076,7 +3084,7 @@ items: [
 const html = `
 <div class="body">
 <h2>Changelog</h2>
-<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.8</span></div>
+<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.9</span></div>
 ${changes.map(({date,version,items})=>`
 <div style="margin-bottom:24px">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -3814,12 +3822,13 @@ panelsEl.appendChild(section);
 }
 function attachCarouselGesture(carousel,track,dotsEl,count){
 var idx = 0;
-var sx = 0,sy = 0;
+var sx = 0,sy = 0,st = 0;
 var locked = null;
 var dragging = false;
 var dragOffset = 0;
-var COMMIT_FRAC = 0.28;
-var LOCK_PX     = 6;
+var COMMIT_FRAC = 0.12;
+var VELOCITY_THRESH = 0.3;
+var LOCK_PX     = 4;
 function goTo(n,animate){
 n = Math.max(0,Math.min(count - 1,n));
 idx = n;
@@ -3839,6 +3848,7 @@ if (e.touches.length!==1) return;
 var t = e.touches[0];
 sx = t.clientX;
 sy = t.clientY;
+st = Date.now();
 locked = null;
 dragging = false;
 dragOffset = 0;
@@ -3854,13 +3864,12 @@ locked = Math.abs(dx)>=Math.abs(dy) ? 'h' : 'v';
 }
 if (locked==='v') return;
 if ((idx===0&&dx > 0)||(idx===count - 1&&dx < 0)){
-dragOffset = dx * 0.2;
+dragOffset = dx * 0.15;
 }else{
 dragOffset = dx;
 }
 e.preventDefault();
 dragging = true;
-var w = carousel.offsetWidth;
 track.classList.add('no-transition');
 track.style.transform = 'translateX(calc(' + (-idx * 100) + '% + ' + dragOffset + 'px))';
 },{passive: false});
@@ -3872,7 +3881,9 @@ return;
 dragging = false;
 track.classList.remove('no-transition');
 var w = carousel.offsetWidth;
-var commit = Math.abs(dragOffset) > w * COMMIT_FRAC;
+var elapsed = Math.max(1, Date.now() - st);
+var velocity = Math.abs(dragOffset) / elapsed; // px/ms
+var commit = Math.abs(dragOffset) > w * COMMIT_FRAC || velocity > VELOCITY_THRESH;
 if (commit){
 goTo(dragOffset < 0 ? idx + 1 : idx - 1,true);
 }else{
