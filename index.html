@@ -3917,6 +3917,7 @@
         version: 'v1.6',
         items: [
           'Improved swipe animation smoothness on mobile. Fast flicks now complete much quicker (min animation duration reduced from 120ms to 60ms, and duration now scales inversely with velocity). Easing curve updated to start fast and decelerate, matching natural flick momentum. Velocity sampling window widened from 80ms to 120ms so fast flicks are measured accurately.',
+          'Fixed a bug where swiping left (e.g. Teams → Films) would sometimes trigger a vertical scroll. A two-frame gap before the swipe animation became active was leaving touchmove events unblocked, letting the browser treat them as scrolls. Right swipes were unaffected because their track repositioning happened immediately. Fix: preventDefault is now called as soon as direction is locked to horizontal, regardless of animation state.',
         ]
       },
       {
@@ -4769,7 +4770,12 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
         return; // skip applyDrag this frame; active isn't true yet
       }
 
-      if (!active) return;
+      if (!active) {
+        // Direction is locked to 'h' but active isn't set yet (waiting for rAF).
+        // Still call preventDefault so the browser doesn't scroll during that gap.
+        if (locked === 'h') e.preventDefault();
+        return;
+      }
       e.preventDefault();
 
       const w = window.innerWidth;
