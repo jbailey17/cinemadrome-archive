@@ -2058,7 +2058,7 @@ const watchable = g.subs.filter(s=>s.video_id).length;
 const meta = eventMetaByKey[`${g.name}|${g.year}`]||{};
 const posterSrc = imgEvent(g.name,g.year)||meta.poster||'';
 const poster = posterSrc ? `<img class="event-poster" src="${posterSrc}" alt="${esc(g.name)} poster" loading="lazy">` : `<div class="event-poster-placeholder">🎬</div>`;
-const dateStr = meta.month_name ? `${meta.month_name}${g.year}` : `${g.year}`;
+const dateStr = meta.month_name ? `${meta.month_name} ${g.year}` : `${g.year}`;
 return `<div class="event-card" data-kind="event" data-key="${esc(g.name)}|${g.year}">
 <div class="event-card-poster">${poster}</div>
 <div class="event-card-info">
@@ -2329,16 +2329,16 @@ openStatDrawer(panel.dataset.stat,panel.querySelector('h3').textContent.trim());
 if (YT_BAKED) setTimeout(()=>renderYtViews(DATA.submissions,YT_BAKED.views),0);
 return `
 <div class="panels">
-${section('Prolific &amp;long-running')}
+${section('Prolific &amp; long-running')}
 <div class="panel" data-stat="topMembers" style="cursor:pointer"><h3>Most prolific members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topMembers,'member',n=>n+' film'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topTeams" style="cursor:pointer"><h3>Most prolific teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topTeams,'team',n=>n+' film'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="longestTeams" style="cursor:pointer"><h3>Longest-running teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${longestTeams.map(([name,yrsCount,first,last],i)=>medalRow(name,yrsCount,first,last,'team',i)).join('')}</div>
 <div class="panel" data-stat="longestActive" style="cursor:pointer"><h3>Longest active members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${longestActive.map(([name,span,first,last],i)=>medalRow(name,span,first,last,'member',i)).join('')}</div>
-${section('Awards &amp;trophies')}
+${section('Awards &amp; trophies')}
 <div class="panel" data-stat="topTrophyTeams" style="cursor:pointer"><h3>Most decorated teams 🏆 <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topTrophyTeams,'team',n=>n+' trophy'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topAwardMembers" style="cursor:pointer"><h3>Most awarded members 🏆 <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwardMembers,'member',n=>n+' trophy'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topAwards" style="cursor:pointer"><h3>Most awarded categories <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwards,'award',n=>n+' winner'+(n>1?'s':''))}</div>
-${section('Connections &amp;streaks')}
+${section('Connections &amp; streaks')}
 <div class="panel" data-stat="mostTeams" style="cursor:pointer"><h3>Members on most different teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(mostTeams,'member',n=>n+' team'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topTeamStreaks" style="cursor:pointer"><h3>Back-to-back teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
 <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Longest streak of consecutive calendar years</div>
@@ -2956,14 +2956,14 @@ items: [
 ]
 },
 {
-date: 'May 2026',
+date: '2026-05-01',
 version: 'v1.7',
 items: [
 'The search/filter bar and tabs nav now stay pinned to the top of the screen when scrolling down the page. Implemented via a scroll-based JavaScript approach using a sentinel element to detect scroll position, switching the nav wrapper to fixed positioning once it leaves the viewport — working around browser limitations that prevent CSS sticky from functioning inside overflow:hidden containers.',
 ],
 },
 {
-date: 'May 23,2026',
+date: '2026-05-23',
 version: 'v1.6',
 items: [
 'Improved swipe animation smoothness on mobile. Fast flicks now complete much quicker (min animation duration reduced from 120ms to 60ms,and duration now scales inversely with velocity). Easing curve updated to start fast and decelerate,matching natural flick momentum. Velocity sampling window widened from 80ms to 120ms so fast flicks are measured accurately.',
@@ -2971,7 +2971,7 @@ items: [
 ]
 },
 {
-date: 'May 23,2026',
+date: '2026-05-23',
 version: 'v1.5',
 items: [
 'Improved horizontal swipe accuracy on mobile: tab swipes now require more deliberate motion before direction is locked (threshold raised from 6px to 10px),and a horizontal bias means a slightly arcing thumb swipe is no longer misread as a vertical scroll. Pure vertical scrolling is unaffected.',
@@ -2980,7 +2980,7 @@ items: [
 ]
 },
 {
-date: 'May 22,2026',
+date: '2026-05-22',
 version: 'v1.4',
 items: [
 'Fixed: All stats panels now correctly credit co-produced films to all participating teams. Previously,co_teams were missed in: Most prolific teams,Longest-running teams,Most decorated teams,Back-to-back teams streaks,and the Most viewed teams YouTube panel. Lord of the Rings (Cinemadrome + The Boy Toys) was the only affected film.',
@@ -2988,14 +2988,14 @@ items: [
 ]
 },
 {
-date: 'May 22,2026',
+date: '2026-05-22',
 version: 'v1.3',
 items: [
 'Fixed swipe conflict in the Stats tab on mobile: swiping inside a stat panel carousel (e.g. Prolific & Long-Running) now only moves between panels within that group. Previously,swiping left through panels would also trigger the tab-switching swipe gesture. Swipes that begin outside a carousel still navigate between tabs as expected.',
 ]
 },
 {
-date: 'May 22,2026',
+date: '2026-05-22',
 version: 'v1.2',
 items: [
 'Clicking a name row inside a stat drawer now opens that team\'s,member\'s,or award\'s full rollup drawer,with back-navigation support.',
@@ -3005,7 +3005,7 @@ items: [
 ]
 },
 {
-date: 'May 22,2026',
+date: '2026-05-22',
 version: 'v1.1',
 items: [
 'Added a Feedback button in the top-left corner of the header with a sparkle animation. Clicking it opens a Google Form for submitting comments and feature requests.',
@@ -3020,7 +3020,7 @@ items: [
 ]
 },
 {
-date: 'May 21,2026',
+date: '2026-05-21',
 items: [
 'Added "Most viewed films","Most viewed teams","Most viewed members",and "Most viewed events" panels to the YouTube section of the Stats tab,populated when view counts are fetched.',
 'Added YouTube view count "Fetch & Lock" functionality — fetches live view counts from the YouTube Data API and bakes them into the file for instant loading on future opens.',
@@ -3029,7 +3029,7 @@ items: [
 ]
 },
 {
-date: 'May 8,2026',
+date: '2026-05-08',
 items: [
 'Improved member search result ordering — when searching,results whose names contain the search term now appear first,before other partial matches.',
 'Fixed mobile drawer scroll bleed-through: scrolling at the top of an open drawer no longer scrolls the page behind it.',
@@ -3040,7 +3040,7 @@ items: [
 ]
 },
 {
-date: 'May 7,2026',
+date: '2026-05-07',
 items: [
 'Made the archive publishable as a website via GitHub Pages.',
 'Added YouTube playlist button to each event drawer,linking directly to the corresponding Cinemadrome YouTube playlist.',
@@ -3051,7 +3051,7 @@ items: [
 ]
 },
 {
-date: 'May 3,2026',
+date: '2026-05-03',
 items: [
 'Added Stats tab with panels for: most prolific members and teams,longest-running teams,most decorated teams,most awarded members,members on most different teams,back-to-back teams and members by consecutive year,films per year chart,and new members per year chart.',
 'Added event poster thumbnails to the Events tab grid cards.',
@@ -3061,7 +3061,7 @@ items: [
 ]
 },
 {
-date: 'May 1,2026',
+date: '2026-05-01',
 items: [
 'Fixed search function — search now correctly filters films,teams,members,and awards as you type.',
 'Added sort options for trophies,most films,most members,A→Z,Z→A,oldest,and newest.',
@@ -3075,7 +3075,7 @@ items: [
 ]
 },
 {
-date: 'Apr 2026',
+date: '2026-04-01',
 items: [
 'Original archive built — Films,Events,Teams,Members,and Awards tabs with search,filters,and sort. Drawer-based detail views for all entity types.',
 ]
