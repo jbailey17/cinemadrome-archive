@@ -822,7 +822,7 @@
     Feedback
     <span class="fb-star">✦</span>
   </a>
-  <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.5</button>
+  <button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:2">v1.6</button>
   <div class="brand">
     <button id="home-btn" onclick="location.reload();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;-webkit-tap-highlight-color:transparent;">
     <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:100%">
@@ -3914,6 +3914,13 @@
     const changes = [
       {
         date: 'May 23, 2026',
+        version: 'v1.6',
+        items: [
+          'Improved swipe animation smoothness on mobile. Fast flicks now complete much quicker (min animation duration reduced from 120ms to 60ms, and duration now scales inversely with velocity). Easing curve updated to start fast and decelerate, matching natural flick momentum. Velocity sampling window widened from 80ms to 120ms so fast flicks are measured accurately.',
+        ]
+      },
+      {
+        date: 'May 23, 2026',
         version: 'v1.5',
         items: [
           'Improved horizontal swipe accuracy on mobile: tab swipes now require more deliberate motion before direction is locked (threshold raised from 6px to 10px), and a horizontal bias means a slightly arcing thumb swipe is no longer misread as a vertical scroll. Pure vertical scrolling is unaffected.',
@@ -4027,7 +4034,7 @@
     const html = `
       <div class="body">
         <h2>Changelog</h2>
-        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.5</span></div>
+        <div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.6</span></div>
         ${changes.map(({ date, version, items }) => `
           <div style="margin-bottom:24px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -4617,15 +4624,15 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
     const COMMIT_FRAC = 0.32;   // fraction of screen width to auto-commit
     const COMMIT_VEL  = 0.3;    // px/ms fast-flick threshold
     const MAX_Y       = 70;     // cancel if vertical travel exceeds this
-    const LOCK_PX     = 10;     // px before direction is decided
-    const H_BIAS      = 1.4;    // vertical must exceed horizontal * this to lock vertical
+    const LOCK_PX     = 14;     // px before direction is decided
+    const H_BIAS      = 2.0;    // vertical must exceed horizontal * this to lock vertical
 
     const track  = document.getElementById('swipe-track');
     const nextEl = $('main-next');
 
     // Rolling velocity — store last N touch points for stable flick detection
     const VEL_WINDOW = [];
-    const VEL_MAX_AGE = 80; // ms
+    const VEL_MAX_AGE = 120; // ms
 
     let sx = 0, sy = 0;
     let currentOffset = 0;  // actual translateX value while dragging
@@ -4662,8 +4669,8 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
 
     function setTrackAnimated(px, duration, onDone) {
       // Clamp duration between 120ms and 320ms
-      const ms = Math.round(Math.min(320, Math.max(120, duration)));
-      track.style.transition = `transform ${ms}ms cubic-bezier(0.25,0.46,0.45,0.94)`;
+      const ms = Math.round(Math.min(300, Math.max(60, duration)));
+      track.style.transition = `transform ${ms}ms cubic-bezier(0.15,0.85,0.35,1.0)`;
       track.style.transform  = `translateX(${px}px)`;
       currentOffset = px;
       if (onDone) {
@@ -4790,9 +4797,10 @@ $('sort').addEventListener('change', e => { state.sort = e.target.value; render(
 
       if (doCommit) {
         const targetX = dir < 0 ? -w : 0;
-        // Scale duration to remaining distance so faster swipes feel instant
+        // Scale duration: distance-based but inversely scaled by velocity so fast flicks snap
         const remaining = Math.abs(targetX - currentOffset);
-        const duration  = (remaining / w) * 280;
+        const velFactor = vel > 0.1 ? Math.min(1, 0.3 / vel) : 1;
+        const duration  = (remaining / w) * 260 * velFactor;
 
         setTrackAnimated(targetX, duration, () => {
           const cur = VIEWS.indexOf(state.view);
