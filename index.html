@@ -3954,15 +3954,23 @@ if (nextEl) observer.observe(nextEl,{childList: true,subtree: false});
 (function(){
   var btn = document.getElementById('feedback-btn');
   var header = document.querySelector('header');
-  function onScroll(){
-    if(window.scrollY > 30){
+  function updateBtn(){
+    var drawerOpen = document.querySelector('.drawer.open');
+    if(window.scrollY > 30 || drawerOpen){
       btn.classList.add('collapsed');
     } else {
       btn.classList.remove('collapsed');
     }
   }
-  window.addEventListener('scroll', onScroll, {passive:true});
-  onScroll();
+  window.addEventListener('scroll', updateBtn, {passive:true});
+
+  // Watch for drawer open/close via class changes
+  var observer = new MutationObserver(updateBtn);
+  document.querySelectorAll('.drawer').forEach(function(d){
+    observer.observe(d, {attributes: true, attributeFilter: ['class']});
+  });
+
+  updateBtn();
 })();
 </script>
 </body></html>
