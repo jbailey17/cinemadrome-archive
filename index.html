@@ -28,7 +28,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:3;pointer-events:auto">v1.9</button>
+<button id="version-btn" aria-label="View changelog" style="position:absolute;top:10px;right:12px;background:none;border:1px solid var(--border);color:var(--text-faint);font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;cursor:pointer;letter-spacing:0.03em;transition:color 0.15s,border-color 0.15s;z-index:3;pointer-events:auto">v1.10</button>
 <div class="brand">
 <button id="home-btn" onclick="location.reload();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -2943,6 +2943,16 @@ function openChangelog(){
 const changes = [
 {
 date: '2026-05-23',
+version: 'v1.10',
+items: [
+'Fixed a jank/snap issue with the header parallax animation when scrolling quickly back to the top. The root cause was an interaction between the body scroll lock (position:fixed applied when a drawer is open) and the parallax handler: while locked, window.scrollY reads as 0, causing the header to silently snap to the fully-visible position. When the drawer closed and scroll position was restored via scrollTo(), a stale rAF would then re-read the wrong scrollY and produce a visible jump.',
+'Parallax scroll handler now bails out immediately — both at event time and inside the rAF callback — if the body scroll lock is active, preventing any spurious transform updates during the locked state.',
+'closeDrawer() now eagerly applies the correct translateY transform synchronously at the known savedScrollY immediately after restoring scroll position, so the header is already in the right place before any scroll event can fire.',
+'Added will-change:transform to the header CSS to promote it to its own compositor layer, ensuring parallax updates are handled off the main thread without triggering layout or paint.',
+]
+},
+{
+date: '2026-05-23',
 version: 'v1.9',
 items: [
 'Feedback button now stays collapsed when a drawer is open, preventing it from expanding over drawer content. Implemented via a MutationObserver watching each drawer for class changes.',
@@ -3088,7 +3098,7 @@ items: [
 const html = `
 <div class="body">
 <h2>Changelog</h2>
-<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.9</span></div>
+<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.10</span></div>
 ${changes.map(({date,version,items})=>`
 <div style="margin-bottom:24px">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
