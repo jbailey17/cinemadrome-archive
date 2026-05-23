@@ -3234,7 +3234,18 @@ document.body.style.top = '';
 document.body.style.left = '';
 document.body.style.right = '';
 delete document.body.dataset.scrollY;
-window.scrollTo(0,savedScrollY);
+// Restore scroll position. We apply the parallax offset immediately at the
+// known savedScrollY rather than waiting for the async scroll event, which
+// would fire after a rAF gap and cause a visible snap/hang.
+window.scrollTo(0, savedScrollY);
+(function(){
+  var hdr = document.querySelector('header');
+  if (!hdr) return;
+  var h = hdr.offsetHeight;
+  var offset = Math.min(savedScrollY * 0.4, h);
+  hdr.style.transition = 'none';
+  hdr.style.transform = 'translateY(-' + offset + 'px)';
+})();
 resetDrawerTheme();
 }
 const THEME_PROPS = ['--bg','--bg-elev','--bg-elev-2','--border','--border-strong',
@@ -4002,31 +4013,35 @@ if (nextEl) observer.observe(nextEl,{childList: true,subtree: false});
   init();
   window.addEventListener('resize', init, {passive: true});
 
-  // Parallax: scroll header up at ~40% of scroll speed
-  var lastScrollY = window.scrollY;
-  var rafPending = false;
+  // Parallax: scroll header up at ~40% of scroll speed.
+  // IMPORTANT: when a drawer is open the body gets position:fixed (scroll lock),
+  // which makes window.scrollY read as 0. We must ignore scroll events fired
+  // during that locked state — and also the synthetic scrollTo() fired by
+  // closeDrawer() to restore position — otherwise the header snaps to the wrong
+  // position when the drawer closes.
+  function applyParallax(scrollY) {
+    var h = header.offsetHeight;
+    var offset = Math.min(scrollY * 0.4, h);
+    header.style.transition = 'none';
+    header.style.transform = 'translateY(-' + offset + 'px)';
+  }
 
+  var rafPending = false;
   function onScroll() {
+    // Skip while body scroll is locked (drawer open)
+    if (document.body.style.position === 'fixed') return;
     if (rafPending) return;
     rafPending = true;
     requestAnimationFrame(function () {
       rafPending = false;
-      var scrollY = window.scrollY;
-      var h = header.offsetHeight;
-      var offset = Math.min(scrollY * 0.4, h);
-
-      // No CSS transition — transitions interpolate from a mid-animation value
-      // and cause a visible hang/snap when scroll reaches 0 quickly.
-      // Pure rAF-batched direct transform tracks the scroll position faithfully.
-      header.style.transition = 'none';
-
-      header.style.transform = 'translateY(-' + offset + 'px)';
-      lastScrollY = scrollY;
+      // Double-check lock wasn't acquired between event and rAF
+      if (document.body.style.position === 'fixed') return;
+      applyParallax(window.scrollY);
     });
   }
 
   window.addEventListener('scroll', onScroll, {passive: true});
-  onScroll();
+  applyParallax(window.scrollY);
 })();
 </script>
 </body></html>
