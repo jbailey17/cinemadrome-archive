@@ -29,7 +29,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v1.15</button>
+<button id="version-btn" aria-label="View changelog">v1.16</button>
 <div class="brand">
 <button id="home-btn" onclick="location.reload();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -533,7 +533,7 @@ const thumb = s.video_id
 return `<div class="mini-card" data-id="${s.id}">
 ${thumb}
 <div class="mini-film">${esc(s.film||'untitled')}</div>
-<div class="mini-meta">${subMonthYear(s)}· ${esc(s.event)}</div>
+<div class="mini-meta">${subMonthYear(s)} · ${esc(s.event)}</div>
 </div>`;
 }
 function renderRollup(filtered,valuesFn,kind){
@@ -583,7 +583,7 @@ let extra = '';
 if (kind==='member'){
 const aw = subs.reduce((n,s)=>n+s.awards.length,0);
 const teamCount = new Set(subs.map(s=>s.team)).size;
-const line1 = `${subs.length} film${subs.length>1?'s':''}· ${teamCount} team${teamCount>1?'s':''}${aw?` · 🏆 ${aw}`:''}`;
+const line1 = `${subs.length} film${subs.length>1?'s':''} · ${teamCount} team${teamCount>1?'s':''}${aw?` · 🏆 ${aw}`:''}`;
 extra = `<div>${line1}</div><div style="margin-top:2px;opacity:0.7">${yrRange}</div>`;
 }else if (kind==='team'){
 const aw = subs.reduce((n,s)=>n+s.awards.length,0);
@@ -592,7 +592,7 @@ const memberPart = uniqueMembers ? ` · ${uniqueMembers} member${uniqueMembers>1
 const line1 = `${subs.length} film${subs.length>1?'s':''}${memberPart}${aw?` · 🏆 ${aw}`:''}`;
 extra = `<div>${line1}</div><div style="margin-top:2px;opacity:0.7">${yrRange}</div>`;
 }else if (kind==='award'){
-extra = `${subs.length} winner${subs.length>1?'s':''}· ${yrRange}`;
+extra = `${subs.length} winner${subs.length>1?'s':''} · ${yrRange}`;
 }
 return `<div class="listcard" data-kind="${kind}" data-key="${esc(name)}">
 <div class="name">${esc(name)}</div>
@@ -949,9 +949,9 @@ ${YT_BAKED ? '' : '<div style="color:var(--text-faint);font-size:13px">Click “
 </div>
 <div style="margin-top:12px;display:flex;gap:8px">
 <button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">
-${YT_BAKED ? '&#8635;Refresh' : '&#9654;Fetch &amp;Lock view counts'}
+${YT_BAKED ? '&#8635; Refresh' : '&#9654; Fetch &amp; Lock view counts'}
 </button>
-<button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">&#8659;Refresh &amp;Download</button>
+<button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
 </div>
 </div>
 <div class="panel" id="yt-new-views-panel" style="${YT_BAKED ? '' : 'display:none'}"><h3>🔥 Most new views since last refresh</h3>
@@ -1003,7 +1003,7 @@ return `
 <span class="u-rank-cell">${medals[i]||'<span class="u-rank-num">'+(i+1)+'</span>'}</span>
 <div style="min-width:0">
 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${esc(s.film||'Untitled')}</div>
-<div style="font-size:11px;color:var(--text-faint)">${esc(s.display_team||s.team)}· ${s.year}</div>
+<div style="font-size:11px;color:var(--text-faint)">${esc(s.display_team||s.team)} · ${s.year}</div>
 </div>
 </div>
 <div class="ct" style="white-space:nowrap">${views.toLocaleString()}${deltaHtml(views,origViews)}</div>
@@ -1186,7 +1186,7 @@ if (triggerBtn) triggerBtn.textContent = `Fetching… ${Math.min(i+chunkSize,vid
 }
 }catch(e){
 if (list) list.innerHTML = `<div style="color:var(--accent-2);font-size:13px">Error: ${e.message}</div>`;
-if (fetchBtn){fetchBtn.disabled = false;fetchBtn.innerHTML = '&#8635;Refresh';}
+if (fetchBtn){fetchBtn.disabled = false;fetchBtn.innerHTML = '&#8635; Refresh';}
 if (dlBtn){dlBtn.disabled = false;}
 return null;
 }
@@ -1195,7 +1195,7 @@ const fetched = now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:
 const originalViews = (YT_BAKED&&YT_BAKED.views) ? YT_BAKED.views : null;
 renderYtViews(DATA.submissions,viewMap,originalViews);
 if (meta) meta.textContent = 'Last updated ' + fetched;
-if (fetchBtn){fetchBtn.disabled = false;fetchBtn.innerHTML = '&#8635;Refresh';}
+if (fetchBtn){fetchBtn.disabled = false;fetchBtn.innerHTML = '&#8635; Refresh';}
 if (dlBtn){dlBtn.disabled = false;}
 return{viewMap,fetched};
 }
@@ -1260,7 +1260,7 @@ const html = `
 ${player}
 <div class="body">
 <h2>${s.film ? esc(s.film) : '<em>untitled</em>'}</h2>
-<div style="color:var(--text-dim);margin-top:4px"><b class="team-link" data-team="${esc(s.team)}" style="cursor:pointer">${esc(s.display_team||s.team)}</b>${s.display_team&&s.display_team!==s.team ? ` <span style="color:var(--text-faint);font-size:11px">(${esc(s.team)})</span>` : ''}${s.co_teams ? s.co_teams.map(ct=>`<span style="color:var(--text-dim)"> &amp;</span><b class="team-link" data-team="${esc(ct)}" style="cursor:pointer">${esc(ct)}</b>`).join('') : ''}· <span class="event-link" data-event="${esc(s.event)}|${s.year}" style="cursor:pointer">${esc(s.event)}(${subMonthYear(s)})</span></div>
+<div style="color:var(--text-dim);margin-top:4px"><b class="team-link" data-team="${esc(s.team)}" style="cursor:pointer">${esc(s.display_team||s.team)}</b>${s.display_team&&s.display_team!==s.team ? ` <span style="color:var(--text-faint);font-size:11px">(${esc(s.team)})</span>` : ''}${s.co_teams ? s.co_teams.map(ct=>`<span style="color:var(--text-dim)"> &amp;</span><b class="team-link" data-team="${esc(ct)}" style="cursor:pointer">${esc(ct)}</b>`).join('') : ''} · <span class="event-link" data-event="${esc(s.event)}|${s.year}" style="cursor:pointer">${esc(s.event)} (${subMonthYear(s)})</span></div>
 ${s.genre ? `<div style="margin-top:8px"><span class="pill genre">${esc(s.genre)}</span></div>` : ''}
 ${s.video_id ? `<div class="links"><a href="${watchUrl(s.video_id)}" target="_blank" rel="noopener">▶ Watch on YouTube</a>${YT_BAKED&&YT_BAKED.views[s.video_id]!==undefined ? `<span class="view-count" title="View count as of ${YT_BAKED.fetched}">▶ ${YT_BAKED.views[s.video_id].toLocaleString()} views <span class="view-count-date">· as of ${YT_BAKED.fetched}</span></span>` : ''}</div>` : ''}
 ${s.description ? `<section><h3>Description</h3><div class="desc-collapsible${s.description.length > 200 ? ' collapsed' : ''}" data-long="${s.description.length > 200 ? '1' : '0'}"><div class="desc-text" style="color:var(--text-dim);font-size:13px;white-space:pre-wrap;line-height:1.6">${esc(s.description)}</div>${s.description.length > 200 ? `<button class="desc-toggle" aria-label="Toggle description"><i class="desc-arrow">▾</i> Read more</button>` : ''}</div></section>` : ''}
@@ -1309,7 +1309,7 @@ return a.team.localeCompare(b.team);
 return b.year - a.year;
 });
 const yrs = [...new Set(subs.map(s=>s.year))].sort((a,b)=>a-b);
-const yrLine = yrs.length ? `${subs.length} film${subs.length>1?'s':''}· ${yrs.length===1?yrs[0]:`${yrs[0]}–${yrs[yrs.length-1]}`}` : '';
+const yrLine = yrs.length ? `${subs.length} film${subs.length>1?'s':''} · ${yrs.length===1?yrs[0]:`${yrs[0]}–${yrs[yrs.length-1]}`}` : '';
 const aw = subs.reduce((n,s)=>n+s.awards.length,0);
 let teamMembersHtml = '';
 if (kind==='team'){
@@ -1491,7 +1491,7 @@ return `
 <span class="u-rank-cell">${medals[i]||`<span class="u-rank-num">${i+1}</span>`}</span>
 <div style="min-width:0">
 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${esc(s.film||'Untitled')}</div>
-<div style="font-size:11px;color:var(--text-faint)">${esc(s.display_team||s.team)}· ${s.year}</div>
+<div style="font-size:11px;color:var(--text-faint)">${esc(s.display_team||s.team)} · ${s.year}</div>
 </div>
 </div>
 <div class="ct" style="white-space:nowrap">${views.toLocaleString()}${deltaStr}</div>
@@ -1531,6 +1531,14 @@ function openChangelog(){
 const changes = [
 {
 date: '2026-05-23',
+version: 'v1.16',
+items: [
+'Fixed missing spaces between film count and middle dot in the subtitle line of Member, Team, and Event rollup drawers (e.g. "3 films · 2018–2026" was rendering as "3 films· 2018–2026").',
+'Fixed missing spaces in the YouTube stats page buttons: "↻Refresh" now reads "↻ Refresh", "⇓Refresh & Download" now reads "⇓ Refresh & Download", and "►Fetch &Lock view counts" now reads "► Fetch & Lock view counts".',
+'Fixed missing spaces in Film drawer: team name and middle dot separator (e.g. "Hell Toupee·" → "Hell Toupee ·"), and between event name and date parenthetical (e.g. "Sweded 11(May 2026)" → "Sweded 11 (May 2026)").',
+],
+},
+{
 date: '2026-05-23',
 version: 'v1.15',
 items: [
@@ -1539,6 +1547,8 @@ items: [
 'Fixed the YT_BAKED substitution regex to match the declaration regardless of whitespace before the opening brace, which was preventing view count data from being embedded in downloads.',
 ],
 },{
+date: '2026-05-23',
+version: 'v1.14',
 items: [
 'Updated award type display names to include spaces around the slash for improved word wrapping in tiles: "Best Cinematography / Special Fx" and "Best Cinematography / Editing".',
 'Updated event poster image URLs for 10 events: VID-E-UWE BOLL (2016), 48 Hour Film Race (2016), Sweded (2017), Sweded (2018), 48 Hour Film Race (2018), Sweded (2019), Shakespeare in the Backyard (2019), 240 Hour Film Race (2019), Captain Asteroid: Season 2 (2019), and Sweded (2020).',
@@ -1716,7 +1726,7 @@ items: [
 const html = `
 <div class="body">
 <h2>Changelog</h2>
-<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.15</span></div>
+<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.16</span></div>
 ${changes.map(({date,version,items})=>`
 <div style="margin-bottom:24px">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
