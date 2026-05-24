@@ -29,7 +29,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v1.18</button>
+<button id="version-btn" aria-label="View changelog">v1.19</button>
 <div class="brand">
 <button id="home-btn" onclick="location.reload();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -451,7 +451,13 @@ let top = 0;
 let el = mainEl;
 while (el) { top += el.offsetTop; el = el.offsetParent; }
 const tabsH = wrapper ? wrapper.offsetHeight : 0;
-window.scrollTo({top: top - tabsH, behavior: 'instant'});
+const targetScrollY = top - tabsH;
+const minPageH = targetScrollY + window.innerHeight;
+if (document.documentElement.scrollHeight < minPageH){
+mainEl.style.minHeight = (mainEl.offsetHeight + (minPageH - document.documentElement.scrollHeight)) + 'px';
+}
+window.scrollTo({top: targetScrollY, behavior: 'instant'});
+mainEl.style.minHeight = '';
 }
 function render(){
 const filtered = getFiltered();
@@ -589,7 +595,7 @@ entries.sort((a,b)=>(nameMatchScore(b[0]) - nameMatchScore(a[0]))||Math.min(...b
 }else{
 entries.sort((a,b)=>(nameMatchScore(b[0]) - nameMatchScore(a[0]))||b[1].length - a[1].length||a[0].localeCompare(b[0]));
 }
-return `<div class="grid-2">${entries.map(([name,subs])=>{
+return `<div class="grid-2"${kind==='award' ? ' style="padding-bottom:100vh"' : ''}>${entries.map(([name,subs])=>{
 const yrs = [...new Set(subs.map(s=>s.year))].sort((a,b)=>b-a);
 const yrRange = yrs.length===1 ? yrs[0] : `${Math.min(...yrs)}–${Math.max(...yrs)}`;
 let extra = '';
@@ -916,7 +922,7 @@ el.addEventListener('click',()=>openRollup(el.dataset.kind,el.dataset.key))
 document.querySelectorAll('.panel[data-stat]').forEach(panel=>
 panel.addEventListener('click',e=>{
 if (e.target.closest('.leader[data-kind]')) return;
-openStatDrawer(panel.dataset.stat,panel.querySelector('h3').textContent.trim());
+openStatDrawer(panel.dataset.stat,[...panel.querySelector('h3').childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim());
 })
 );
 },0);
@@ -1049,7 +1055,7 @@ memberTotals.set(m,mt);
 }
 if (s.event){
 const key = `${s.event}|${s.year}`;
-const e = eventTotals.get(key)||{views: 0,origViews: (origV!==null ? 0 : null),films: 0,displayName: `${s.event}(${s.year})`};
+const e = eventTotals.get(key)||{views: 0,origViews: (origV!==null ? 0 : null),films: 0,displayName: `${s.event} (${s.year})`};
 e.views+=v;
 if (origV!==null){if (e.origViews===null) e.origViews = 0;e.origViews+=origV;}
 e.films+=1;
@@ -1140,7 +1146,7 @@ const maxDelta = deltas[0].delta;
 chartEl.innerHTML = deltas.map(({s,delta,total},i)=>{
 const barWidth = Math.round((delta / maxDelta) * 100);
 const label = s.film||'Untitled';
-const sub = `${s.display_team||s.team}· ${s.year}`;
+const sub = `${s.display_team||s.team} · ${s.year}`;
 return `
 <div class="leader" data-id="${s.id}" style="cursor:pointer;display:block;padding:6px 0;border-bottom:1px solid var(--border)">
 <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px">
@@ -1481,7 +1487,7 @@ rowsHtml = rows.map(([name,n],i)=>`
 const html = `
 <div class="body">
 <h2>${esc(title)}</h2>
-<div style="color:var(--text-dim);margin-top:4px;margin-bottom:16px">${rows.length}${kind==='award' ? 'categories' : kind + 's'}</div>
+<div style="color:var(--text-dim);margin-top:4px;margin-bottom:16px">${rows.length} ${kind==='award' ? 'categories' : kind + 's'}</div>
 ${rowsHtml}
 </div>`;
 showDrawer(html,{type: 'stat',statKey,title});
@@ -1529,7 +1535,7 @@ return `
 }).join('');
 }
 const count = list.length;
-const subtitle = kind==='films' ? `${count} film${count!==1?'s':''}` : `${count}${kind}${count!==1?'s':''}`;
+const subtitle = kind==='films' ? `${count} film${count!==1?'s':''}` : `${count} ${kind}${count!==1?'s':''}`;
 const html = `
 <div class="body">
 <h2>${esc(title)}</h2>
@@ -1542,6 +1548,18 @@ resetDrawerTheme();
 }
 function openChangelog(){
 const changes = [
+{
+date: '2026-05-24',
+version: 'v1.19',
+items: [
+'Fixed missing spaces in the Most New Views panel between team names and the middle dot separator (e.g. "Hell Toupee· 2025" → "Hell Toupee · 2025").',
+'Fixed missing spaces between count and label in stat "See all" drawer subtitles (e.g. "142members" → "142 members").',
+'Fixed stat panel "See all" drawer titles including the "See all ›" label text (e.g. "Most prolific members See all ›" → "Most prolific members").',
+'Fixed clicking a YouTube stats panel "See all" drawer causing the page to scroll back to the top. The body scroll-lock is now only applied when the drawer is first opened, not on subsequent in-drawer navigation.',
+'Fixed missing spaces in YouTube stats "Most Viewed Events" panel and drawer: event names now display as "Sweded (2024)" instead of "Sweded(2024)", and the drawer subtitle now reads "27 events" instead of "27events".',
+'Fixed tab-switch scroll bug on desktop where switching to the Awards tab (which has few entries) would scroll the page above the tab bar. The scroll target is now always reachable by temporarily extending page height if needed.',
+]
+},
 {
 date: '2026-05-24',
 version: 'v1.18',
@@ -1755,7 +1773,7 @@ items: [
 const html = `
 <div class="body">
 <h2>Changelog</h2>
-<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.18</span></div>
+<div style="color:var(--text-dim);margin-top:4px;margin-bottom:20px">Cinemadrome Archive · <span style="color:var(--accent);font-weight:700">v1.19</span></div>
 ${changes.map(({date,version,items})=>`
 <div style="margin-bottom:24px">
 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -1817,7 +1835,8 @@ btn.innerHTML = collapsed
 function showDrawer(html,pushHistory){
 const prevBody = $('drawer-body');
 const prevLayer = $('drawer-prev');
-if ($('drawer').classList.contains('open')&&pushHistory){
+const wasOpen = $('drawer').classList.contains('open');
+if (wasOpen&&pushHistory){
 prevLayer.innerHTML = prevBody.innerHTML;
 prevLayer.scrollTop = $('drawer').scrollTop;
 if (window._drawerPrevTitleObs) window._drawerPrevTitleObs.disconnect();
@@ -1852,12 +1871,14 @@ const titleBar = `<div class="drawer-title-bar" id="drawer-title-bar">
 prevBody.innerHTML = titleBar + backBtn + html;
 $('drawer').classList.add('open');
 $('scrim').classList.add('open');
+if (!wasOpen){
 const scrollY = window.scrollY;
 document.body.style.position = 'fixed';
 document.body.style.top = `-${scrollY}px`;
 document.body.style.left = '0';
 document.body.style.right = '0';
 document.body.dataset.scrollY = scrollY;
+}
 $('drawer').scrollTop = 0;
 const _posterReset = $('drawer-body').querySelector('.event-drawer-poster img');
 if (_posterReset) _posterReset.style.transform = 'translateY(0)';
