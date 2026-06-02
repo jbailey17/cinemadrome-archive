@@ -29,7 +29,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v1.21</button>
+<button id="version-btn" aria-label="View changelog">v1.23</button>
 <div class="brand">
 <button id="home-btn" onclick="if(!window.__flyingCatsStarted){preSearchView=null;state.view='events';state.sort=DEFAULT_SORT['events']||'default';var s=document.getElementById('sort');if(s)s.value=state.sort;scrollToTabs();render();}" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -1038,6 +1038,62 @@ for (const [,yr] of memberFirstYear) newPerYear.set(yr,(newPerYear.get(yr)||0)+1
 const newPerYearSorted = [...newPerYear.entries()].sort((a,b)=>a[0]-b[0]);
 const maxNew = Math.max(...newPerYearSorted.map(b=>b[1]),1);
 const allYears = [...new Set(filtered.map(s=>s.year))].sort((a,b)=>a-b);
+const teamWinStreaks = new Map();
+const allEventsSorted = [...new Set(filtered.map(s=>`${s.event}|${s.year}`))]
+.map(ek=>{
+const [evName,evYear] = ek.split('|');
+const month = eventMonth.get(ek)||0;
+return{ek,sortKey: +evYear * 100 + month};
+})
+.sort((a,b)=>a.sortKey - b.sortKey)
+.map(e=>e.ek);
+const teamByEvent = new Map();
+for (const s of filtered){
+const ek = `${s.event}|${s.year}`;
+if (!teamByEvent.has(ek)) teamByEvent.set(ek,{submitted:new Set(),won:new Set()});
+const te = teamByEvent.get(ek);
+for (const teamName of [s.team,...(s.co_teams||[])]){
+te.submitted.add(teamName);
+if (s.awards.length > 0) te.won.add(teamName);
+}
+}
+const allTeams = new Set(filtered.flatMap(s=>[s.team,...(s.co_teams||[])]));
+for (const team of allTeams){
+let streak = 0, maxEventStreak = 0;
+for (const ek of allEventsSorted){
+const te = teamByEvent.get(ek);
+if (!te||!te.submitted.has(team)) continue;
+if (te.won.has(team)){ streak++; if (streak > maxEventStreak) maxEventStreak = streak; }
+else streak = 0;
+}
+if (maxEventStreak > 1) teamWinStreaks.set(team,maxEventStreak);
+}
+const topTeamWinStreaks = [...teamWinStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
+const teamYearWinStreaks = new Map();
+const teamWinsByYear = new Map();
+for (const s of filtered){
+if (s.awards.length === 0) continue;
+for (const teamName of [s.team,...(s.co_teams||[])]){
+if (!teamWinsByYear.has(teamName)) teamWinsByYear.set(teamName,new Set());
+teamWinsByYear.get(teamName).add(s.year);
+}
+}
+for (const team of allTeams){
+const winYears = teamWinsByYear.get(team)||new Set();
+let streak = 0, maxYrStreak = 0;
+for (let i = 0; i < allYears.length; i++){
+const yr = allYears[i];
+const prevYr = allYears[i-1];
+const consecutive = i > 0 && (yr - prevYr === 1);
+if (winYears.has(yr)){
+if (consecutive && streak > 0) streak++;
+else streak = 1;
+if (streak > maxYrStreak) maxYrStreak = streak;
+} else streak = 0;
+}
+if (maxYrStreak > 1) teamYearWinStreaks.set(team,maxYrStreak);
+}
+const topTeamYearWinStreaks = [...teamYearWinStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
 const teamByYear = new Map();
 const memberByYear = new Map();
 for (const s of filtered){
@@ -1115,6 +1171,26 @@ streak = 0;
 if (maxStreak > 1) memberEventStreaks.set(mem,maxStreak);
 }
 const topMemberEventStreaks = [...memberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+const winStreakEventHtml = topTeamWinStreaks.length
+? topTeamWinStreaks.map(([name,n],i)=>`
+<div class="leader" data-kind="team" data-key="${esc(name)}">
+<div class="u-flex-center">
+<span class="u-rank-cell"><span class="u-rank-num">${i+1}</span></span>
+<div class="u-streak-row">${esc(name)}</div>
+</div>
+<div class="ct">${n} in a row</div>
+</div>`).join('')
+: '<div class="empty u-empty-pad">—</div>';
+const winStreakYearHtml = topTeamYearWinStreaks.length
+? topTeamYearWinStreaks.map(([name,n],i)=>`
+<div class="leader" data-kind="team" data-key="${esc(name)}">
+<div class="u-flex-center">
+<span class="u-rank-cell"><span class="u-rank-num">${i+1}</span></span>
+<div class="u-streak-row">${esc(name)}</div>
+</div>
+<div class="ct">${n} yr${n>1?'s':''} in a row</div>
+</div>`).join('')
+: '<div class="empty u-empty-pad">—</div>';
 const b2bMemberEventHtml = topMemberEventStreaks.length
 ? topMemberEventStreaks.map(([name,n],i)=>`
 <div class="leader" data-kind="member" data-key="${esc(name)}">
@@ -1193,6 +1269,8 @@ const _fullLongestActive = [...memberYearSpan.entries()].map(([n,{min,max}])=>[n
 const _fullTrophyTeams = [...teamTrophies.entries()].filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
 const _fullAwardMembers = [...memberAwards.entries()].filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
 const _fullMostTeams = [...memberTeams.entries()].filter(([,t])=>t.size>1).map(([n,t])=>[n,t.size]).sort((a,b)=>b[1]-a[1]);
+const _fullTeamWinStreaks = [...teamWinStreaks.entries()].sort((a,b)=>b[1]-a[1]);
+const _fullTeamYearWinStreaks = [...teamYearWinStreaks.entries()].sort((a,b)=>b[1]-a[1]);
 const _fullTeamStreaks  = [...teamStreaks.entries()].sort((a,b)=>b[1]-a[1]);
 const _fullMemberStreaks = [...memberStreaks.entries()].sort((a,b)=>b[1]-a[1]);
 const _fullMemberEventStreaks = [...memberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]);
@@ -1208,6 +1286,8 @@ mostTeams:{rows: _fullMostTeams,kind:'member',labelFn: n=>n+' team'+(n>1?'s':'')
 topTeamStreaks:{rows: _fullTeamStreaks,kind:'team',labelFn: n=>n+' in a row'},
 topMemberStreaks:{rows: _fullMemberStreaks,kind:'member',labelFn: n=>n+' in a row'},
 topMemberEventStreaks:{rows: _fullMemberEventStreaks,kind:'member',labelFn: n=>n+' in a row'},
+topTeamWinStreaks:{rows: _fullTeamWinStreaks,kind:'team',labelFn: n=>n+' in a row'},
+topTeamYearWinStreaks:{rows: _fullTeamYearWinStreaks,kind:'team',labelFn: n=>n+' yr'+(n>1?'s':'')+' in a row'},
 };
 setTimeout(()=>{
 document.querySelectorAll('.leader[data-kind]').forEach(el=>
@@ -1233,6 +1313,14 @@ ${section('Awards &amp; trophies')}
 <div class="panel" data-stat="topTrophyTeams" style="cursor:pointer"><h3>Most decorated teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topTrophyTeams,'team',n=>n+' trophy'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topAwardMembers" style="cursor:pointer"><h3>Most awarded members <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwardMembers,'member',n=>n+' trophy'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topAwards" style="cursor:pointer"><h3>Most awarded categories <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(topAwards,'award',n=>n+' winner'+(n>1?'s':''))}</div>
+<div class="panel" data-stat="topTeamWinStreaks" style="cursor:pointer"><h3>Winning streaks by event <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
+<div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Most consecutive events where a team won at least one award</div>
+${winStreakEventHtml}
+</div>
+<div class="panel" data-stat="topTeamYearWinStreaks" style="cursor:pointer"><h3>Winning streaks by year <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
+<div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Most consecutive calendar years where a team won at least one award</div>
+${winStreakYearHtml}
+</div>
 ${section('Connections &amp; streaks')}
 <div class="panel" data-stat="mostTeams" style="cursor:pointer"><h3>Members on most different teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(mostTeams,'member',n=>n+' team'+(n>1?'s':''))}</div>
 <div class="panel" data-stat="topTeamStreaks" style="cursor:pointer"><h3>Back-to-back teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>
@@ -1897,6 +1985,19 @@ wireDrawer();
 resetDrawerTheme();
 }
 const CHANGELOG_ENTRIES = [
+{
+date: '2026-06-01',
+version: 'v1.23',
+items: [
+'Removed emojis from the sort dropdown and stats panels.',
+'Replaced gold/silver/bronze medal icons with plain numbers (1, 2, 3) in all stat panels.',
+'Fixed a layout bug where the count column in the "Members on Most Different Teams" panel was misaligned for the top entry.',
+'Added rank numbers to the Back-to-back streak panels, which were previously missing them.',
+'Improved the sort dropdown styling to match the site aesthetic.',
+'Removed the non-functional "Sort: Default" option from the dropdown.',
+'Added two new stat panels in Awards & Trophies: "Winning Streaks by Event" and "Winning Streaks by Year", showing teams with the longest consecutive award-winning runs.',
+]
+},
 {
 date: '2026-06-01',
 version: 'v1.22',
