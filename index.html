@@ -577,6 +577,15 @@ function filmCard(s){
 const awards = s.awards.map(a=>`<span class="pill award award-link" data-award="${esc(a)}">${esc(a)}</span>`).join('');
 const genre = s.genre ? `<span class="pill genre">${esc(s.genre)}</span>` : '';
 const memCt = s.members.length ? `<span class="pill member-count">${s.members.length} member${s.members.length>1?'s':''}</span>` : '';
+const liveViewsNewPill = (()=>{
+if (!YT_LIVE || !YT_LIVE.viewMap || !s.video_id) return '';
+const liveV = YT_LIVE.viewMap[s.video_id];
+if (liveV === undefined) return '';
+const bakedV = (YT_BAKED && YT_BAKED.views && YT_BAKED.views[s.video_id] !== undefined) ? YT_BAKED.views[s.video_id] : null;
+const delta = bakedV !== null ? liveV - bakedV : null;
+if (delta === null || delta <= 0) return '';
+return `<span class="pill" style="background:rgba(110,231,183,0.15);color:#6ee7b7;border:1px solid rgba(110,231,183,0.35);font-weight:600;font-variant-numeric:tabular-nums" title="New views since last saved count">+${delta.toLocaleString()} views</span>`;
+})();
 const thumb = s.video_id
 ? `<div class="thumb">
 <img loading="lazy" src="${thumbUrl(s.video_id)}" alt="">
@@ -587,13 +596,13 @@ const thumb = s.video_id
 <div class="year-badge" style="position:absolute;top:8px;right:8px">${subMonthYear(s)}</div>
 <span style="font-size:11px;margin-top:8px">no video</span>
 </div>`;
-return `<div class="card" data-id="${s.id}">
+return `<div class="card" data-id="${s.id}"${s.video_id ? ` data-video-id="${esc(s.video_id)}"` : ``}>
 ${thumb}
 <div class="body">
 <div class="film">${s.film ? esc(s.film) : '<em style="color:var(--text-faint)">untitled</em>'}</div>
 <div class="team"><b class="team-link" data-team="${esc(s.team)}">${esc(s.display_team||s.team)}</b>${s.display_team&&s.display_team!==s.team ? `<span style="color:var(--text-faint);font-size:11px"> (${esc(s.team)})</span>` : ''}${s.co_teams ? s.co_teams.map(ct=>`<span style="color:var(--text-dim)"> &amp;</span> <b class="team-link" data-team="${esc(ct)}">${esc(ct)}</b>`).join('') : ''}</div>
 <div class="event"><span class="event-link" data-event="${esc(s.event)}|${s.year}">${esc(s.event)}</span></div>
-<div class="meta">${genre}${memCt}${awards}</div>
+<div class="meta">${genre}${memCt}${awards}${liveViewsNewPill}</div>
 </div>
 </div>`;
 }
@@ -1697,6 +1706,10 @@ const deltaHtml = delta > 0 ? ` <span style="color:#6ee7b7;font-size:11px;font-w
 vcEl.title = 'View count as of ' + fetched;
 vcEl.innerHTML = `▶ ${liveV.toLocaleString()}${deltaHtml} views <span class="view-count-date">· as of ${fetched}</span>`;
 })();
+// Trigger re-render of films tab so filmCard() picks up YT_LIVE deltas
+if (state && state.view === 'films') {
+try { render(); } catch(e) {}
+}
 return{viewMap,fetched};
 }
 async function refreshYtOnly(){
