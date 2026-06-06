@@ -30,7 +30,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v1.26</button>
+<button id="version-btn" aria-label="View changelog">v1.27</button>
 <div class="brand">
 <button id="home-btn" onclick="if(!window.__flyingCatsStarted){preSearchView=null;state.view='events';state.sort=DEFAULT_SORT['events']||'default';var s=document.getElementById('sort');if(s)s.value=state.sort;scrollToTabs();render();}" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -1402,27 +1402,20 @@ ${section('Over time')}
 <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px">Members appearing for the first time that year</div>
 ${barChart(newPerYearSorted)}
 </div>
-${section('YouTube')}
-<div class="panel" id="yt-fetch-panel" style="padding:10px 18px;">
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-<div id="yt-views-meta" style="font-size:11px;color:var(--text-faint)">
-${(YT_LIVE||YT_BAKED) ? 'Last updated ' + (YT_LIVE ? YT_LIVE.fetched : YT_BAKED.fetched) : 'View counts not yet loaded'}
+<div style="grid-column:1/-1;margin:8px 0 2px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+<span style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);font-weight:600">YouTube</span>
+<button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font:inherit;cursor:pointer;font-size:11px;white-space:nowrap">${YT_BAKED ? '&#8635; Refresh' : '&#9654; Fetch &amp; Lock'}</button>
+<button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font:inherit;cursor:pointer;font-size:11px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
+<span id="yt-views-meta" style="font-size:11px;color:var(--text-faint)">${(YT_LIVE||YT_BAKED) ? 'Last updated ' + (YT_LIVE ? YT_LIVE.fetched : YT_BAKED.fetched) : ''}</span>
 </div>
-<div style="display:flex;gap:8px;margin-bottom:8px">
-<button id="yt-fetch-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">
-${YT_BAKED ? '&#8635; Refresh' : '&#9654; Fetch &amp; Lock view counts'}
-</button>
-<button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:6px;font:inherit;cursor:pointer;font-size:12px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
-</div>
-</div>
-<div class="panel" id="yt-delta-summary-panel" style="display:${window._ytDeltaSummaryShown?'':'none'};margin-top:18px">
+<div class="panel" id="yt-delta-summary-panel" style="display:${window._ytDeltaSummaryShown?'':'none'}"
+<h3 style="margin:0 0 10px">Since Last Refresh</h3>
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
 <span id="yt-delta-views" style="font-size:13px;color:var(--text)"></span>
 <span id="yt-delta-comments" style="font-size:13px;color:var(--text)"></span>
 <span id="yt-delta-likes" style="font-size:13px;color:var(--text)"></span>
 </div>
 <div id="yt-delta-breakdown"></div>
-</div>
 </div>
 <div class="panel" id="yt-views-panel" style="position:relative">
 <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:10px">
@@ -3188,6 +3181,18 @@ wireDrawer();
 resetDrawerTheme();
 }
 const CHANGELOG_ENTRIES = [
+{
+date: 'June 6, 2026',
+version: 'v1.27',
+items: [
+'Moved the Refresh and Refresh & Download buttons into the YouTube section header, sitting right next to the "YouTube" label. The "Last updated" timestamp now sits to the far right of the header row.',
+'The post-refresh "Since Last Refresh" summary now appears as a standard-sized panel in the YouTube panel grid, rather than spanning the full page width.',
+'The "Since Last Refresh" summary panel now persists when you switch to another tab and come back — previously it would disappear on tab switch.',
+'Total / New mode pills in the YouTube stat panels now have distinct active colors: Total highlights white when selected, New highlights green.',
+'Fixed drawer titles for the New Views See All panels — they now read "New Views — Films" and "New Views — Teams" for consistency with the rest of the section.',
+'Added "Total Runtime of All Films" to the Teams by Total Runtime panel description, displayed in gold.',
+],
+},
 {
 date: '2026-06-05',
 version: 'v1.26',
