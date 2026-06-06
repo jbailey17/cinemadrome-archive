@@ -1408,7 +1408,7 @@ ${barChart(newPerYearSorted)}
 <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font:inherit;cursor:pointer;font-size:11px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
 <span id="yt-views-meta" style="font-size:11px;color:var(--text-faint)">${(YT_LIVE||YT_BAKED) ? 'Last updated ' + (YT_LIVE ? YT_LIVE.fetched : YT_BAKED.fetched) : ''}</span>
 </div>
-<div class="panel" id="yt-delta-summary-panel" style="display:${window._ytDeltaSummaryShown?'':'none'}">
+<div class="panel" id="yt-delta-summary-panel" data-carousel-exclude style="display:${window._ytDeltaSummaryShown?'':'none'}">
 <h3 style="margin:0 0 10px">Since Last Refresh</h3>
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
 <span id="yt-delta-views" style="font-size:13px;color:var(--text)"></span>
@@ -5369,11 +5369,14 @@ children.forEach(function (el){
 var style = el.getAttribute('style')||'';
 var isHeader = style.includes('grid-column');
 if (isHeader){
-current ={header: el,panels: []};
+current ={header: el,panels: [],excluded: []};
 groups.push(current);
+}else if (el.dataset.carouselExclude!==undefined){
+if (!current){current ={header: null,panels: [],excluded: []};groups.push(current);}
+current.excluded.push(el);
 }else if (el.classList.contains('panel')){
 if (el.style.display==='none') return;
-if (!current){current ={header: null,panels: []};groups.push(current);}
+if (!current){current ={header: null,panels: [],excluded: []};groups.push(current);}
 current.panels.push(el);
 }
 });
@@ -5390,6 +5393,9 @@ Array.from(group.header.childNodes).forEach(function(node){
 hdr.appendChild(node);
 });
 section.appendChild(hdr);
+}
+if (group.excluded&&group.excluded.length){
+group.excluded.forEach(function(p){section.appendChild(p);});
 }
 if (group.panels.length<=1){
 if (group.panels[0]) section.appendChild(group.panels[0]);
