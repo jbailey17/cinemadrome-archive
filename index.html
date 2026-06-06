@@ -1362,14 +1362,14 @@ ${YT_BAKED ? '&#8635; Refresh' : '&#9654; Fetch &amp; Lock view counts'}
 </div>
 </div>
 <div class="panel" id="yt-views-panel" style="position:relative">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:10px">
 <h3 style="margin:0">Views</h3>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
 <div class="yt-pill-tabs" data-for="yt-views-mode" style="gap:2px">
 <button class="yt-pill active" data-tab="total">Total</button>
 <button class="yt-pill" data-tab="new" id="yt-views-new-pill">New</button>
 </div>
-<div style="width:1px;height:16px;background:var(--border);flex-shrink:0"></div>
+
 <div class="yt-pill-tabs" data-for="yt-views">
 <button class="yt-pill active" data-tab="films">Films</button>
 <button class="yt-pill" data-tab="teams">Teams</button>
@@ -1384,14 +1384,14 @@ ${YT_BAKED ? '' : '<div style="color:var(--text-faint);font-size:13px">Click &ld
 </div>
 </div>
 <div class="panel" id="yt-comment-views-panel" style="position:relative">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:10px">
 <h3 style="margin:0">Comments</h3>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
 <div class="yt-pill-tabs" data-for="yt-comment-mode" style="gap:2px">
 <button class="yt-pill active" data-tab="total">Total</button>
 <button class="yt-pill" data-tab="new">New</button>
 </div>
-<div style="width:1px;height:16px;background:var(--border);flex-shrink:0"></div>
+
 <div class="yt-pill-tabs" data-for="yt-comment">
 <button class="yt-pill active" data-tab="films">Films</button>
 <button class="yt-pill" data-tab="teams">Teams</button>
@@ -1408,14 +1408,14 @@ ${YT_BAKED ? '' : '<div style="color:var(--text-faint);font-size:13px">View coun
 <div id="yt-new-comments-chart"></div>
 </div>
 <div class="panel" id="yt-likes-panel" style="position:relative">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:10px">
 <h3 style="margin:0">Likes</h3>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
 <div class="yt-pill-tabs" data-for="yt-likes-mode" style="gap:2px">
 <button class="yt-pill active" data-tab="total">Total</button>
 <button class="yt-pill" data-tab="new">New</button>
 </div>
-<div style="width:1px;height:16px;background:var(--border);flex-shrink:0"></div>
+
 <div class="yt-pill-tabs" data-for="yt-likes">
 <button class="yt-pill active" data-tab="films">Films</button>
 <button class="yt-pill" data-tab="teams">Teams</button>
@@ -2776,7 +2776,7 @@ ${kind==='event' ? `<a class="youtube-button" href="${getPlaylistUrl(key.split('
 Watch Playlist on YouTube
 </a>` : ''}
 <div style="color:var(--text-dim);margin-top:4px">${yrLine}${aw?` · 🏆 ${aw} award${aw>1?'s':''}`:''}</div>
-${kind==='event' && (eventMetaByKey[key]||{}).blurb ? `<div class="event-blurb" style="color:var(--text-faint);font-size:12.5px;line-height:1.6;white-space:pre-wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">${esc(eventMetaByKey[key].blurb)}</div>` : ''}
+${kind==='event' && (eventMetaByKey[key]||{}).blurb ? `<section class="event-blurb"><h3>About this event</h3><div style="color:var(--text-dim);font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(eventMetaByKey[key].blurb)}</div></section>` : ''}
 ${kind==='team' ? (() => {
   const teamVideoIds = [...subs].filter(s => s.video_id).sort((a,b) => subSortKey(a) - subSortKey(b)).map(s => s.video_id);
   if (teamVideoIds.length === 0) return '';
