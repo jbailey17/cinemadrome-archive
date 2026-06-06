@@ -1408,7 +1408,7 @@ ${barChart(newPerYearSorted)}
 <button id="yt-download-btn" style="background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font:inherit;cursor:pointer;font-size:11px;white-space:nowrap">&#8659; Refresh &amp; Download</button>
 <span id="yt-views-meta" style="font-size:11px;color:var(--text-faint)">${(YT_LIVE||YT_BAKED) ? 'Last updated ' + (YT_LIVE ? YT_LIVE.fetched : YT_BAKED.fetched) : ''}</span>
 </div>
-<div class="panel" id="yt-delta-summary-panel" data-carousel-exclude style="display:${window._ytDeltaSummaryShown?'':'none'}">
+<div class="panel" id="yt-delta-summary-panel" style="display:${window._ytDeltaSummaryShown?'':'none'}">
 <h3 style="margin:0 0 10px">Since Last Refresh</h3>
 <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">
 <span id="yt-delta-views" style="font-size:13px;color:var(--text)"></span>
@@ -2581,7 +2581,26 @@ setTimeout(()=>{
   setSpan('yt-delta-likes',    '👍', totalNewLikes);
   // Breakdown sections — only for metrics with actual new activity
   const breakdown = document.getElementById('yt-delta-breakdown');
-  if (!breakdown) { summaryPanel.style.display = ''; window._ytDeltaSummaryShown = true; window._ytDeltaSummaryCache = summaryPanel.innerHTML; return; }
+  if (!breakdown) {
+    summaryPanel.style.display = '';
+    (function(){
+      var track = summaryPanel.closest('.stat-carousel-track');
+      if (!track) return;
+      var carousel = track.parentElement;
+      var panels = Array.from(track.children);
+      var idx = panels.indexOf(summaryPanel);
+      if (idx < 0) return;
+      var dotsEl = carousel.querySelector('.stat-carousel-dots');
+      if (dotsEl){
+        var dots = Array.from(dotsEl.children);
+        dots.forEach(function(d){d.style.display='';d.classList.remove('active');});
+        if (dots[idx]) dots[idx].classList.add('active');
+      }
+      track.style.transition = 'none';
+      track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+    })();
+    window._ytDeltaSummaryShown = true; window._ytDeltaSummaryCache = summaryPanel.innerHTML; return;
+  }
   const sections = [];
   const renderSection = (icon, label, deltas, key) => {
     const active = deltas.filter(f => f[key] > 0).sort((a, b) => b[key] - a[key]).slice(0, 3);
@@ -2610,6 +2629,23 @@ ${rows}
     el.addEventListener('click', () => openSubmission(+el.dataset.id))
   );
   summaryPanel.style.display = '';
+  // On mobile, reveal the summary panel's carousel dot and navigate to it
+  (function(){
+    var track = summaryPanel.closest('.stat-carousel-track');
+    if (!track) return;
+    var carousel = track.parentElement;
+    var panels = Array.from(track.children);
+    var idx = panels.indexOf(summaryPanel);
+    if (idx < 0) return;
+    var dotsEl = carousel.querySelector('.stat-carousel-dots');
+    if (dotsEl){
+      var dots = Array.from(dotsEl.children);
+      dots.forEach(function(d){d.style.display='';d.classList.remove('active');});
+      if (dots[idx]) dots[idx].classList.add('active');
+    }
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+  })();
   window._ytDeltaSummaryShown = true;
   window._ytDeltaSummaryCache = summaryPanel.innerHTML;
 })();
@@ -5369,14 +5405,10 @@ children.forEach(function (el){
 var style = el.getAttribute('style')||'';
 var isHeader = style.includes('grid-column');
 if (isHeader){
-current ={header: el,panels: [],excluded: []};
+current ={header: el,panels: []};
 groups.push(current);
-}else if (el.dataset.carouselExclude!==undefined){
-if (!current){current ={header: null,panels: [],excluded: []};groups.push(current);}
-current.excluded.push(el);
 }else if (el.classList.contains('panel')){
-if (el.style.display==='none') return;
-if (!current){current ={header: null,panels: [],excluded: []};groups.push(current);}
+if (!current){current ={header: null,panels: []};groups.push(current);}
 current.panels.push(el);
 }
 });
@@ -5404,16 +5436,25 @@ var carousel = document.createElement('div');
 carousel.className = 'stat-carousel';
 var track = document.createElement('div');
 track.className = 'stat-carousel-track';
+var visiblePanels = group.panels.filter(function(p){return p.style.display!=='none';});
+var firstVisIdx = group.panels.findIndex(function(p){return p.style.display!=='none';});
 group.panels.forEach(function (p){track.appendChild(p);});
 carousel.appendChild(track);
 var dotsEl = document.createElement('div');
 dotsEl.className = 'stat-carousel-dots';
-group.panels.forEach(function (_,i){
+group.panels.forEach(function (p,i){
 var dot = document.createElement('div');
-dot.className = 'dot' + (i===0 ? ' active' : '');
+var isVis = p.style.display!=='none';
+dot.className = 'dot' + (isVis && i===firstVisIdx ? ' active' : '');
+if (!isVis) dot.style.display = 'none';
 dotsEl.appendChild(dot);
 });
 carousel.appendChild(dotsEl);
+// Start carousel at first visible panel
+if (firstVisIdx > 0){
+track.style.transition = 'none';
+track.style.transform = 'translateX(-' + (firstVisIdx * 100) + '%)';
+}
 attachCarouselGesture(carousel,track,dotsEl,group.panels.length);
 section.appendChild(carousel);
 }
