@@ -30,7 +30,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v1.27</button>
+<button id="version-btn" aria-label="View changelog">v1.28</button>
 <div class="brand">
 <button id="home-btn" onclick="if(!window.__flyingCatsStarted){preSearchView=null;state.view='events';state.sort=DEFAULT_SORT['events']||'default';var s=document.getElementById('sort');if(s)s.value=state.sort;scrollToTabs();render();}" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -1141,6 +1141,11 @@ return{ek,sortKey: +evYear * 100 + month};
 })
 .sort((a,b)=>a.sortKey - b.sortKey)
 .map(e=>e.ek);
+// Full chronological event list from master data — used so missed events break streaks
+const allEventsGlobal = DATA.events
+.map(e=>({ek:`${e.name}|${e.year}`,sortKey:e.year*100+(e.month||0)}))
+.sort((a,b)=>a.sortKey-b.sortKey)
+.map(e=>e.ek);
 const memberByEvent = new Map();
 for (const s of filtered){
 const ek = `${s.event}|${s.year}`;
@@ -1151,8 +1156,8 @@ const memberEventStreaks = new Map();
 const allMemsForEvents = new Set(filtered.flatMap(s=>s.members));
 for (const mem of allMemsForEvents){
 let streak = 0,maxStreak = 0;
-for (let i = 0;i < allEvents.length;i++){
-const inThisEvent = memberByEvent.get(allEvents[i])?.has(mem);
+for (let i = 0;i < allEventsGlobal.length;i++){
+const inThisEvent = memberByEvent.get(allEventsGlobal[i])?.has(mem);
 if (inThisEvent){
 streak++;
 if (streak > maxStreak) maxStreak = streak;
@@ -1163,6 +1168,49 @@ streak = 0;
 if (maxStreak > 1) memberEventStreaks.set(mem,maxStreak);
 }
 const topMemberEventStreaks = [...memberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+// All-time team event streaks (parallel to member event streaks above)
+const teamByEventAll = new Map();
+for (const s of filtered){
+const ek = `${s.event}|${s.year}`;
+if (!teamByEventAll.has(ek)) teamByEventAll.set(ek,new Set());
+for (const t of [s.team,...(s.co_teams||[])]) teamByEventAll.get(ek).add(t);
+}
+const teamEventStreaks = new Map();
+for (const team of [...new Set(filtered.flatMap(s=>[s.team,...(s.co_teams||[])]))]){
+let streak = 0,maxStreak = 0;
+for (let i = 0;i < allEventsGlobal.length;i++){
+if (teamByEventAll.get(allEventsGlobal[i])?.has(team)){ streak++; if (streak > maxStreak) maxStreak = streak; } else streak = 0;
+}
+if (maxStreak > 1) teamEventStreaks.set(team,maxStreak);
+}
+const topTeamEventStreaks = [...teamEventStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+// Current streaks: walk backwards from most recent event, stop at first miss
+const teamByEventCurrent = new Map();
+for (const s of filtered){
+const ek = `${s.event}|${s.year}`;
+if (!teamByEventCurrent.has(ek)) teamByEventCurrent.set(ek,new Set());
+for (const t of [s.team,...(s.co_teams||[])]) teamByEventCurrent.get(ek).add(t);
+}
+const currentTeamEventStreaks = new Map();
+for (const team of [...new Set(filtered.flatMap(s=>[s.team,...(s.co_teams||[])]))]){
+let cur = 0;
+for (let i = allEventsGlobal.length-1;i>=0;i--){
+if (teamByEventCurrent.get(allEventsGlobal[i])?.has(team)) cur++;
+else break;
+}
+if (cur >= 1) currentTeamEventStreaks.set(team,cur);
+}
+const topCurrentTeamEventStreaks = [...currentTeamEventStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+const currentMemberEventStreaks = new Map();
+for (const mem of allMemsForEvents){
+let cur = 0;
+for (let i = allEventsGlobal.length-1;i>=0;i--){
+if (memberByEvent.get(allEventsGlobal[i])?.has(mem)) cur++;
+else break;
+}
+if (cur >= 1) currentMemberEventStreaks.set(mem,cur);
+}
+const topCurrentMemberEventStreaks = [...currentMemberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
 const winStreakEventHtml = topTeamWinStreaks.length
 ? topTeamWinStreaks.map(([name,n],i)=>`
 <div class="leader" data-kind="team" data-key="${esc(name)}">
@@ -1317,7 +1365,10 @@ mostTeams:{rows: _fullMostTeams,kind:'member',labelFn: n=>n+' team'+(n>1?'s':'')
 topTeamStreaks:{rows: _fullTeamStreaks,kind:'team',labelFn: n=>n+' in a row'},
 topMemberStreaks:{rows: _fullMemberStreaks,kind:'member',labelFn: n=>n+' in a row'},
 topMemberEventStreaks:{rows: _fullMemberEventStreaks,kind:'member',labelFn: n=>n+' in a row'},
+topTeamEventStreaks:{rows:[...teamEventStreaks.entries()].sort((a,b)=>b[1]-a[1]),kind:'team',labelFn: n=>n+' in a row'},
 topTeamWinStreaks:{rows: _fullTeamWinStreaks,kind:'team',labelFn: n=>n+' in a row'},
+currentTeamEventStreaks:{rows:[...currentTeamEventStreaks.entries()].sort((a,b)=>b[1]-a[1]),kind:'team',labelFn: n=>n+' event'+(n>1?'s':'')},
+currentMemberEventStreaks:{rows:[...currentMemberEventStreaks.entries()].sort((a,b)=>b[1]-a[1]),kind:'member',labelFn: n=>n+' event'+(n>1?'s':'')},
 topTeamYearWinStreaks:{rows: _fullTeamYearWinStreaks,kind:'team',labelFn: n=>n+' yr'+(n>1?'s':'')+' in a row'},
 };
 setTimeout(()=>{
@@ -1392,10 +1443,12 @@ ${tabbedStatPanel('panel-winstreaks','Winning streaks',[
 ${section('Connections &amp; streaks')}
 <div class="panel" data-stat="mostTeams" style="cursor:pointer"><h3>Members on most different teams <span style="float:right;font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">See all ›</span></h3>${rankedLeader(mostTeams,'member',n=>n+' team'+(n>1?'s':''))}</div>
 ${tabbedStatPanel('panel-b2b','Back-to-back',[
-  {label:'Teams',statKey:'topTeamStreaks',subText:'Longest streak of consecutive calendar years — teams'},
-  {label:'Members',statKey:'topMemberStreaks',subText:'Longest streak of consecutive calendar years — members'},
-  {label:'By event',statKey:'topMemberEventStreaks',subText:'Longest streak of consecutive events (regardless of year gaps)'},
+  {label:'Teams by year',statKey:'topTeamStreaks',subText:'Longest streak of consecutive calendar years — teams'},
+  {label:'Teams by event',statKey:'topTeamEventStreaks',subText:'Longest streak of consecutive events attended — teams'},
+  {label:'Members by year',statKey:'topMemberStreaks',subText:'Longest streak of consecutive calendar years — members'},
+  {label:'Members by event',statKey:'topMemberEventStreaks',subText:'Longest streak of consecutive events attended — members'},
 ])}
+${tabbedStatPanel('panel-current-streaks','Current event streak',[{label:'Teams',statKey:'currentTeamEventStreaks',subText:'Teams with the longest unbroken streak of consecutive events ending at the most recent event'},{label:'Members',statKey:'currentMemberEventStreaks',subText:'Members with the longest unbroken streak of consecutive events ending at the most recent event'}])}
 ${section('Over time')}
 <div class="panel"><h3>Films per year</h3>${barChart(byYear)}</div>
 <div class="panel"><h3>New members per year</h3>
@@ -1493,6 +1546,10 @@ ${YT_BAKED ? '' : '<div style="color:var(--text-faint);font-size:13px">View coun
 function renderYtViews(subs,viewMap,originalMap,commentMap,originalComments,likeMap,durationMap,originalLikes){
 const panel = document.getElementById('yt-views-list');
 if (!panel) return;
+// Snapshot current mode from DOM before any writes, so we don't clobber a New-mode panel with Total data
+const _viewsModeNow = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-views-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
+const _commentModeNow = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-comment-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
+const _likesModeNow = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-likes-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
 const medals = ['1','2','3'];
 function deltaHtml(newVal,origVal,color){
 if (origVal===undefined||origVal===null) return '';
@@ -1508,7 +1565,7 @@ const withViews = subs
 .sort((a,b)=>b.views - a.views)
 .slice(0,10);
 if (!withViews.length){panel.innerHTML = '<div style="color:var(--text-faint);font-size:13px">No data.</div>';return;}
-panel.innerHTML = withViews.map(({s,views},i)=>{
+if (_viewsModeNow !== 'new') panel.innerHTML = withViews.map(({s,views},i)=>{
 const origViews = originalMap ? originalMap[s.video_id] : undefined;
 const liveC = commentMap ? commentMap[s.video_id] : undefined;
 const origC = originalComments ? originalComments[s.video_id] : undefined;
@@ -1525,7 +1582,7 @@ return `
 <div class="ct" style="white-space:nowrap;text-align:right">${views.toLocaleString()}${deltaHtml(views,origViews)}</div>
 </div>`;
 }).join('');
-panel.querySelectorAll('.leader[data-id]').forEach(el=>
+if (_viewsModeNow !== 'new') panel.querySelectorAll('.leader[data-id]').forEach(el=>
 el.addEventListener('click',()=>openSubmission(+el.dataset.id))
 );
 const teamTotals = new Map();
@@ -1625,8 +1682,8 @@ const withComments = subs
 .map(s=>({s,comments: commentMap[s.video_id]}))
 .sort((a,b)=>b.comments - a.comments)
 .slice(0,10);
-if (!withComments.length){commentPanel.innerHTML='<div style="color:var(--text-faint);font-size:13px">No data.</div>';}
-else{
+if (!withComments.length){if (_commentModeNow !== 'new') commentPanel.innerHTML='<div style="color:var(--text-faint);font-size:13px">No data.</div>';}
+else if (_commentModeNow !== 'new'){
 commentPanel.innerHTML = withComments.map(({s,comments},i)=>{
 const origC = originalComments ? originalComments[s.video_id] : undefined;
 return `<div class="leader" data-id="${s.id}" style="cursor:pointer">
@@ -1690,8 +1747,8 @@ _descEl.innerHTML=`<strong>Total Runtime of All Films:</strong> <span style="col
 if (likeMap){
 const likesPanel = document.getElementById('yt-likes-list');
 if (likesPanel){
-if (!_sortedFilmsByLikes.length){likesPanel.innerHTML='<div style="color:var(--text-faint);font-size:13px">No data.</div>';}
-else{
+if (!_sortedFilmsByLikes.length){if (_likesModeNow !== 'new') likesPanel.innerHTML='<div style="color:var(--text-faint);font-size:13px">No data.</div>';}
+else if (_likesModeNow !== 'new'){
 likesPanel.innerHTML = _sortedFilmsByLikes.slice(0,10).map(({s,likes,origLikes},i)=>`
 <div class="leader" data-id="${s.id}" style="cursor:pointer">
 <div class="u-flex-center">
@@ -1824,10 +1881,10 @@ teamsByDuration:{list: _sortedTeamsByDuration,kind: 'teamsByDuration'},
 };
 setTimeout(()=>{
 // Tab data: maps tab key to data key and subtitle
-// Track current mode (total/new) for views panel
-let _ytViewsMode = 'total';
-let _ytCommentMode = 'total';
-let _ytLikesMode = 'total';
+// Track current mode (total/new) for views panel — read from DOM to survive re-renders
+let _ytViewsMode = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-views-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
+let _ytCommentMode = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-comment-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
+let _ytLikesMode = (()=>{const b=document.querySelector('.yt-pill-tabs[data-for="yt-likes-mode"] .yt-pill.active');return b?b.dataset.tab:'total';})();
 const _ytTabData = {
 'yt-views': {
   films:   {key:'films',   sub:'Films ranked by total YouTube view count'},
@@ -2539,17 +2596,18 @@ renderYtViews(DATA.submissions,viewMap,originalViews,commentMap,originalComments
 if (meta) meta.textContent = 'Last updated ' + fetched;
 // Re-render any panels currently on New mode so they show fresh delta data
 setTimeout(()=>{
-  const rerender = (groupId, listId, subId) => {
-    const modeVar = groupId==='yt-views' ? _ytViewsMode : groupId==='yt-comment' ? _ytCommentMode : _ytLikesMode;
-    if (modeVar !== 'new') return;
-    const panel = document.getElementById(listId.replace('-list','-panel').replace('-views-list','-views-panel'));
-    const activeDimBtn = panel && panel.querySelector(`.yt-pill-tabs[data-for="${groupId}"] .yt-pill.active`);
-    const dimTab = activeDimBtn ? activeDimBtn.dataset.tab : 'films';
-    renderYtTabContent(groupId, dimTab, document.getElementById(listId), document.getElementById(subId));
+  // For any panel currently on New mode, re-click the active mode pill so the closure
+  // re-initialises its mode variable from DOM and re-renders fresh delta data.
+  const rerender = (panelId, modeGroupFor) => {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const activeModeBtn = panel.querySelector(`.yt-pill-tabs[data-for="${modeGroupFor}"] .yt-pill.active`);
+    if (!activeModeBtn || activeModeBtn.dataset.tab !== 'new') return;
+    activeModeBtn.click();
   };
-  rerender('yt-views',   'yt-views-list',         'yt-views-sub');
-  rerender('yt-comment', 'yt-comment-views-list',  'yt-comment-sub');
-  rerender('yt-likes',   'yt-likes-list',          'yt-likes-sub');
+  rerender('yt-views-panel',        'yt-views-mode');
+  rerender('yt-comment-views-panel','yt-comment-mode');
+  rerender('yt-likes-panel',        'yt-likes-mode');
 }, 0);
 // Populate delta summary panel
 (function(){
@@ -2942,7 +3000,170 @@ ${teamMembersHtml}
 ${memberTeamsHtml}
 ${awardTeamsHtml}
 ${awardMembersHtml}
-<section><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${subs.map(s=>filmCard(s)).join('')}</div></section>
+${kind==='member' ? (()=>{
+// ── Member career timeline ──────────────────────────────────────────────
+// Group films by year (sorted newest→oldest), detect gaps, build timeline
+const sortedSubs = [...subs].sort((a,b)=>subSortKey(b)-subSortKey(a));
+const byYear = new Map();
+for (const s of sortedSubs){
+  if (!byYear.has(s.year)) byYear.set(s.year,[]);
+  byYear.get(s.year).push(s);
+}
+const memberYears = [...byYear.keys()].sort((a,b)=>a-b);
+const minYear = memberYears[0];
+const maxYear = memberYears[memberYears.length-1];
+// Streak = consecutive events from the most recent backwards, stops at first gap
+const allEventsSortedForStreak = [...new Set(DATA.submissions.map(s=>`${s.event}|${s.year}`))]
+  .map(ek=>{const[,evYear]=ek.split('|');return{ek,sortKey:+evYear*100+(eventMonth.get(ek)||0)};})
+  .sort((a,b)=>a.sortKey-b.sortKey).map(e=>e.ek);
+const memberEventSet = new Set(subs.map(s=>`${s.event}|${s.year}`));
+let currentStreak=0;
+for (let i=allEventsSortedForStreak.length-1;i>=0;i--){
+  if(memberEventSet.has(allEventsSortedForStreak[i])) currentStreak++;
+  else break;
+}
+const streakBadge = currentStreak>0
+  ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(29,158,117,0.15);color:#1D9E75;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle">${currentStreak>1?'🔥 ':''}${currentStreak}-event streak</span>`
+  : '';
+// Build all years in range newest-first for gap detection
+const allYearsInRange=[];
+for(let y=maxYear;y>=minYear;y--) allYearsInRange.push(y);
+const tlRows = allYearsInRange.map((yr,i)=>{
+  const yrSubs = byYear.get(yr)||[];
+  const isGap = yrSubs.length===0;
+  const isLast = i===allYearsInRange.length-1;
+  const dotColor = isGap ? 'var(--border-strong,#555)' : '#1D9E75';
+  const filmChips = yrSubs.map(s=>{
+    const awardPills = s.awards.length ? `<span style="font-size:12px;opacity:0.8">🏆 ${s.awards.map(a=>esc(a)).join(' · ')}</span>` : '';
+    const eventLabel = `<span class="event-link" data-event="${esc(s.event)}|${s.year}" onclick="event.stopPropagation()" style="font-size:12px;color:var(--text-faint);cursor:pointer" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-faint)'">${esc(s.event)}</span>`;
+    const memberNewViewsBadge = (()=>{
+      if (!YT_LIVE || !YT_LIVE.viewMap || !s.video_id) return '';
+      const liveV = YT_LIVE.viewMap[s.video_id];
+      if (liveV === undefined) return '';
+      const bakedV = (YT_BAKED && YT_BAKED.views && YT_BAKED.views[s.video_id] !== undefined) ? YT_BAKED.views[s.video_id] : null;
+      const delta = bakedV !== null ? liveV - bakedV : null;
+      if (delta === null || delta <= 0) return '';
+      return `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:#6ee7b7;font-variant-numeric:tabular-nums;white-space:nowrap">+${delta.toLocaleString()}</span>`;
+    })();
+    return `<div class="mini-card" data-id="${s.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
+      ${s.video_id?`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;overflow:hidden"><img loading="lazy" src="${thumbUrl(s.video_id)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`:`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;background:var(--bg-elev);display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`}
+      <div style="min-width:0;flex:1">
+        <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.film?esc(s.film):'<em style="opacity:0.5">untitled</em>'}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px">${eventLabel}${awardPills}</div>
+      </div>
+      ${memberNewViewsBadge}
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;align-items:stretch;gap:0;min-height:${isGap?'36px':'52px'}">
+    <div style="width:36px;flex-shrink:0;padding-top:6px">
+      <span style="font-size:10px;color:${isGap?'var(--text-faint)':'var(--text-dim)'};font-weight:500">${yr}</span>
+    </div>
+    <div style="width:20px;flex-shrink:0;display:flex;flex-direction:column;align-items:center">
+      <div style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:8px;position:relative;z-index:1"></div>
+      ${!isLast?`<div style="width:1.5px;flex:1;background:var(--border);margin-top:2px"></div>`:''}
+    </div>
+    <div data-films="1" style="flex:1;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
+      ${isGap
+        ? `<span style="font-size:11px;color:var(--text-faint);font-style:italic;padding-top:4px">No films this year</span>`
+        : filmChips}
+    </div>
+  </div>`;
+}).join('');
+const tlId = 'member-tl-' + Date.now();
+return `<section>
+<h3 style="margin-bottom:10px;display:flex;align-items:center;gap:0">
+  <span>Career timeline</span>
+  <span style="font-size:11px;font-weight:400;color:var(--text-faint);margin-left:6px">${minYear}${maxYear>minYear?`–${maxYear}`:''}</span>
+  ${streakBadge}
+  <button id="${tlId}-btn" data-order="desc" onclick="(function(btn){var order=btn.dataset.order==='desc'?'asc':'desc';btn.dataset.order=order;btn.textContent=order==='desc'?'newest first':'oldest first';var c=document.getElementById('${tlId}');var rows=Array.from(c.children);rows.reverse();rows.forEach(function(r){c.appendChild(r);var filmList=r.querySelector('[data-films]');if(filmList&&filmList.children.length>1){var chips=Array.from(filmList.children);chips.reverse();chips.forEach(function(ch){filmList.appendChild(ch);});}});})(this)" style="margin-left:auto;font-size:11px;font-weight:500;color:var(--text-faint);background:var(--bg-elev-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.color='var(--text-faint)';this.style.borderColor='var(--border)'">newest first</button>
+</h3>
+<div id="${tlId}" style="padding:0 0 4px">${tlRows}</div>
+</section>`;
+})() : kind==='team' ? (()=>{
+// ── Team career timeline ────────────────────────────────────────────────
+const sortedSubs = [...subs].sort((a,b)=>subSortKey(b)-subSortKey(a));
+const byYear = new Map();
+for (const s of sortedSubs){
+  if (!byYear.has(s.year)) byYear.set(s.year,[]);
+  byYear.get(s.year).push(s);
+}
+const teamYearKeys = [...byYear.keys()].sort((a,b)=>a-b);
+const minYear = teamYearKeys[0];
+const maxYear = teamYearKeys[teamYearKeys.length-1];
+// Streak: consecutive events from most recent backwards
+const allEventsSortedForStreak = [...new Set(DATA.submissions.map(s=>`${s.event}|${s.year}`))]
+  .map(ek=>{const[,evYear]=ek.split('|');return{ek,sortKey:+evYear*100+(eventMonth.get(ek)||0)};})
+  .sort((a,b)=>a.sortKey-b.sortKey).map(e=>e.ek);
+const teamEventSet = new Set(subs.map(s=>`${s.event}|${s.year}`));
+let teamStreak=0;
+for (let i=allEventsSortedForStreak.length-1;i>=0;i--){
+  if(teamEventSet.has(allEventsSortedForStreak[i])) teamStreak++;
+  else break;
+}
+const teamStreakBadge = teamStreak>0
+  ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(29,158,117,0.15);color:#1D9E75;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle">${teamStreak>1?'🔥 ':''}${teamStreak}-event streak</span>`
+  : '';
+const allYearsInRange=[];
+for(let y=maxYear;y>=minYear;y--) allYearsInRange.push(y);
+const tlRowsTeam = allYearsInRange.map((yr,i)=>{
+  const yrSubs = byYear.get(yr)||[];
+  const isGap = yrSubs.length===0;
+  const isLast = i===allYearsInRange.length-1;
+  const dotColor = isGap ? 'var(--border-strong,#555)' : '#1D9E75';
+  const filmChips = yrSubs.map(s=>{
+    const awardPills = s.awards.length ? `<span style="font-size:12px;opacity:0.8">🏆 ${s.awards.map(a=>esc(a)).join(' · ')}</span>` : '';
+    const eventLabel = `<span class="event-link" data-event="${esc(s.event)}|${s.year}" onclick="event.stopPropagation()" style="font-size:12px;color:var(--text-faint);cursor:pointer" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-faint)'">${esc(s.event)}</span>`;
+    const memberChips = s.members.length
+      ? `<div data-member-chips style="display:none;flex-wrap:wrap;gap:3px;margin-top:4px">${s.members.map(m=>`<span class="member-chip" data-member="${esc(m)}" style="font-size:10px;padding:1px 6px" onclick="event.stopPropagation()">${esc(m)}</span>`).join('')}</div>`
+      : '';
+    const teamNewViewsBadge = (()=>{
+      if (!YT_LIVE || !YT_LIVE.viewMap || !s.video_id) return '';
+      const liveV = YT_LIVE.viewMap[s.video_id];
+      if (liveV === undefined) return '';
+      const bakedV = (YT_BAKED && YT_BAKED.views && YT_BAKED.views[s.video_id] !== undefined) ? YT_BAKED.views[s.video_id] : null;
+      const delta = bakedV !== null ? liveV - bakedV : null;
+      if (delta === null || delta <= 0) return '';
+      return `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:#6ee7b7;font-variant-numeric:tabular-nums;white-space:nowrap">+${delta.toLocaleString()}</span>`;
+    })();
+    return `<div class="mini-card" data-id="${s.id}" style="display:flex;flex-direction:column;gap:0;padding:9px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:8px">
+        ${s.video_id?`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;overflow:hidden"><img loading="lazy" src="${thumbUrl(s.video_id)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`:`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;background:var(--bg-elev);display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`}
+        <div style="min-width:0;flex:1">
+          <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.film?esc(s.film):'<em style="opacity:0.5">untitled</em>'}</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px">${eventLabel}${awardPills}</div>
+        </div>
+        ${teamNewViewsBadge}
+      </div>
+      ${memberChips}
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;align-items:stretch;gap:0;min-height:${isGap?'36px':'52px'}">
+    <div style="width:36px;flex-shrink:0;padding-top:6px">
+      <span style="font-size:10px;color:${isGap?'var(--text-faint)':'var(--text-dim)'};font-weight:500">${yr}</span>
+    </div>
+    <div style="width:20px;flex-shrink:0;display:flex;flex-direction:column;align-items:center">
+      <div style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:8px;position:relative;z-index:1"></div>
+      ${!isLast?`<div style="width:1.5px;flex:1;background:var(--border);margin-top:2px"></div>`:''}
+    </div>
+    <div data-films="1" style="flex:1;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
+      ${isGap
+        ? `<span style="font-size:11px;color:var(--text-faint);font-style:italic;padding-top:4px">No films this year</span>`
+        : filmChips}
+    </div>
+  </div>`;
+}).join('');
+const tlIdTeam = 'team-tl-' + Date.now();
+return `<section>
+<h3 style="margin-bottom:10px;display:flex;align-items:center;gap:0">
+  <span>Filmography</span>
+  <span style="font-size:11px;font-weight:400;color:var(--text-faint);margin-left:6px">${minYear}${maxYear>minYear?`–${maxYear}`:''}</span>
+  ${teamStreakBadge}
+  <button id="${tlIdTeam}-btn" data-order="desc" onclick="(function(btn){var order=btn.dataset.order==='desc'?'asc':'desc';btn.dataset.order=order;btn.textContent=order==='desc'?'newest first':'oldest first';var c=document.getElementById('${tlIdTeam}');var rows=Array.from(c.children);rows.reverse();rows.forEach(function(r){c.appendChild(r);var filmList=r.querySelector('[data-films]');if(filmList&&filmList.children.length>1){var chips=Array.from(filmList.children);chips.reverse();chips.forEach(function(ch){filmList.appendChild(ch);});}});})(this)" style="margin-left:auto;font-size:11px;font-weight:500;color:var(--text-faint);background:var(--bg-elev-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.color='var(--text-faint)';this.style.borderColor='var(--border)'">newest first</button>
+  <label style="margin-left:8px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--text-faint);cursor:pointer;flex-shrink:0"><input type="checkbox" id="${tlIdTeam}-members-chk" style="accent-color:var(--accent);cursor:pointer" onchange="(function(chk){var show=chk.checked;var c=document.getElementById('${tlIdTeam}');c.querySelectorAll('[data-member-chips]').forEach(function(el){el.style.display=show?'flex':'none';});})(this)"> members</label>
+</h3>
+<div id="${tlIdTeam}" style="padding:0 0 4px">${tlRowsTeam}</div>
+</section>`;
+})() : `<section><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${subs.map(s=>filmCard(s)).join('')}</div></section>`}
 </div>
 `
 showDrawer(html,{type: 'rollup',kind,key});
@@ -3217,6 +3438,14 @@ wireDrawer();
 resetDrawerTheme();
 }
 const CHANGELOG_ENTRIES = [
+{
+date: '2026-06-07',
+version: 'v1.28',
+items: [
+'After clicking Refresh in the YouTube stats panel, film tiles in Member and Team timeline drawers now show a green +N badge at the far right indicating new views gained since the last baked baseline. Tiles with no new views (or +0) show nothing.',
+'Fixed a bug where clicking Refresh while a YouTube stat panel was on the New tab would display Total data instead of New data. The panel now correctly re-renders New data after a Refresh.',
+],
+},
 {
 date: 'June 6, 2026',
 version: 'v1.27',
