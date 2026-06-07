@@ -3045,7 +3045,7 @@ const tlRows = allYearsInRange.map((yr,i)=>{
       if (delta === null || delta <= 0) return '';
       return `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:#6ee7b7;font-variant-numeric:tabular-nums;white-space:nowrap">+${delta.toLocaleString()}</span>`;
     })();
-    return `<div class="mini-card" data-id="${s.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
+    return `<div class="mini-card" data-id="${s.id}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;min-width:0;overflow:hidden;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
       ${s.video_id?`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;overflow:hidden"><img loading="lazy" src="${thumbUrl(s.video_id)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`:`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;background:var(--bg-elev);display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`}
       <div style="min-width:0;flex:1">
         <div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.film?esc(s.film):'<em style="opacity:0.5">untitled</em>'}</div>
@@ -3062,7 +3062,7 @@ const tlRows = allYearsInRange.map((yr,i)=>{
       <div style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:8px;position:relative;z-index:1"></div>
       ${!isLast?`<div style="width:1.5px;flex:1;background:var(--border);margin-top:2px"></div>`:''}
     </div>
-    <div data-films="1" style="flex:1;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
+    <div data-films="1" style="flex:1;min-width:0;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
       ${isGap
         ? `<span style="font-size:11px;color:var(--text-faint);font-style:italic;padding-top:4px">No films this year</span>`
         : filmChips}
@@ -3125,7 +3125,7 @@ const tlRowsTeam = allYearsInRange.map((yr,i)=>{
       if (delta === null || delta <= 0) return '';
       return `<span style="flex-shrink:0;font-size:11px;font-weight:700;color:#6ee7b7;font-variant-numeric:tabular-nums;white-space:nowrap">+${delta.toLocaleString()}</span>`;
     })();
-    return `<div class="mini-card" data-id="${s.id}" style="display:flex;flex-direction:column;gap:0;padding:9px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
+    return `<div class="mini-card" data-id="${s.id}" style="display:flex;flex-direction:column;gap:0;padding:9px 12px;background:var(--bg-elev-2);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:0;min-width:0;overflow:hidden;transition:background 0.12s,border-color 0.12s" onmouseover="this.style.background='var(--bg-elev)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.background='var(--bg-elev-2)';this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:8px">
         ${s.video_id?`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;overflow:hidden"><img loading="lazy" src="${thumbUrl(s.video_id)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`:`<div style="flex-shrink:0;width:60px;height:40px;border-radius:6px;background:var(--bg-elev);display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`}
         <div style="min-width:0;flex:1">
@@ -3145,7 +3145,7 @@ const tlRowsTeam = allYearsInRange.map((yr,i)=>{
       <div style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:8px;position:relative;z-index:1"></div>
       ${!isLast?`<div style="width:1.5px;flex:1;background:var(--border);margin-top:2px"></div>`:''}
     </div>
-    <div data-films="1" style="flex:1;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
+    <div data-films="1" style="flex:1;min-width:0;padding:${isGap?'4px':'4px'} 0 ${isGap?'4px':'12px'} 8px;display:flex;flex-direction:column;gap:5px">
       ${isGap
         ? `<span style="font-size:11px;color:var(--text-faint);font-style:italic;padding-top:4px">No films this year</span>`
         : filmChips}
