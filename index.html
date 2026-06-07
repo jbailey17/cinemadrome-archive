@@ -2980,6 +2980,19 @@ posterHtml = `<div class="event-drawer-poster" style="max-height:220px">
 </div>`;
 }
 }
+// Compute streak badge here so it can be placed in the drawer body (not just the timeline h3)
+const _allEventsSortedStreak = [...new Set(DATA.submissions.map(s=>`${s.event}|${s.year}`))]
+  .map(ek=>{const[,evYear]=ek.split('|');return{ek,sortKey:+evYear*100+(eventMonth.get(ek)||0)};})
+  .sort((a,b)=>a.sortKey-b.sortKey).map(e=>e.ek);
+const _entityEventSet = new Set(subs.map(s=>`${s.event}|${s.year}`));
+let _entityStreak=0;
+for (let i=_allEventsSortedStreak.length-1;i>=0;i--){
+  if(_entityEventSet.has(_allEventsSortedStreak[i])) _entityStreak++;
+  else break;
+}
+const _streakBadgeHtml = _entityStreak>0
+  ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(29,158,117,0.15);color:#1D9E75;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;vertical-align:middle">${_entityStreak>1?'🔥 ':''}${_entityStreak}-event streak</span>`
+  : '';
 const html = `
 ${posterHtml}
 <div class="body">
@@ -2989,6 +3002,7 @@ ${kind==='event' ? `<a class="youtube-button" href="${getPlaylistUrl(key.split('
 Watch Playlist on YouTube
 </a>` : ''}
 <div style="color:var(--text-dim);margin-top:4px">${yrLine}${aw?` · 🏆 ${aw} award${aw>1?'s':''}`:''}</div>
+${kind==='member' ? `<div style="margin-top:6px">${_streakBadgeHtml}</div>` : ''}
 ${kind==='event' && (eventMetaByKey[key]||{}).blurb ? `<section class="event-blurb"><h3>About this event</h3><div style="color:var(--text-dim);font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(eventMetaByKey[key].blurb)}</div></section>` : ''}
 ${kind==='team' ? (() => {
   const teamVideoIds = [...subs].filter(s => s.video_id).sort((a,b) => subSortKey(a) - subSortKey(b)).map(s => s.video_id);
@@ -2996,6 +3010,7 @@ ${kind==='team' ? (() => {
   const playlistUrl = 'https://www.youtube.com/watch_videos?video_ids=' + teamVideoIds.join(',');
   return `<a class="youtube-button team-yt-btn" href="${playlistUrl}" target="_blank" rel="noopener">${esc(key)} YouTube Playlist</a>`;
 })() : ''}
+${kind==='team' && _streakBadgeHtml ? `<div style="margin-top:8px">${_streakBadgeHtml}</div>` : ''}
 ${teamMembersHtml}
 ${memberTeamsHtml}
 ${awardTeamsHtml}
@@ -3071,10 +3086,9 @@ const tlRows = allYearsInRange.map((yr,i)=>{
 }).join('');
 const tlId = 'member-tl-' + Date.now();
 return `<section>
-<h3 style="margin-bottom:10px;display:flex;align-items:center;gap:0">
+<h3 style="margin-bottom:6px;display:flex;align-items:center;gap:0">
   <span>Career timeline</span>
   <span style="font-size:11px;font-weight:400;color:var(--text-faint);margin-left:6px">${minYear}${maxYear>minYear?`–${maxYear}`:''}</span>
-  ${streakBadge}
   <button id="${tlId}-btn" data-order="desc" onclick="(function(btn){var order=btn.dataset.order==='desc'?'asc':'desc';btn.dataset.order=order;btn.textContent=order==='desc'?'newest first':'oldest first';var c=document.getElementById('${tlId}');var rows=Array.from(c.children);rows.reverse();rows.forEach(function(r){c.appendChild(r);var filmList=r.querySelector('[data-films]');if(filmList&&filmList.children.length>1){var chips=Array.from(filmList.children);chips.reverse();chips.forEach(function(ch){filmList.appendChild(ch);});}});})(this)" style="margin-left:auto;font-size:11px;font-weight:500;color:var(--text-faint);background:var(--bg-elev-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.color='var(--text-faint)';this.style.borderColor='var(--border)'">newest first</button>
 </h3>
 <div id="${tlId}" style="padding:0 0 4px">${tlRows}</div>
@@ -3154,13 +3168,14 @@ const tlRowsTeam = allYearsInRange.map((yr,i)=>{
 }).join('');
 const tlIdTeam = 'team-tl-' + Date.now();
 return `<section>
-<h3 style="margin-bottom:10px;display:flex;align-items:center;gap:0">
+<h3 style="margin-bottom:6px;display:flex;align-items:center;gap:0">
   <span>Filmography</span>
   <span style="font-size:11px;font-weight:400;color:var(--text-faint);margin-left:6px">${minYear}${maxYear>minYear?`–${maxYear}`:''}</span>
-  ${teamStreakBadge}
   <button id="${tlIdTeam}-btn" data-order="desc" onclick="(function(btn){var order=btn.dataset.order==='desc'?'asc':'desc';btn.dataset.order=order;btn.textContent=order==='desc'?'newest first':'oldest first';var c=document.getElementById('${tlIdTeam}');var rows=Array.from(c.children);rows.reverse();rows.forEach(function(r){c.appendChild(r);var filmList=r.querySelector('[data-films]');if(filmList&&filmList.children.length>1){var chips=Array.from(filmList.children);chips.reverse();chips.forEach(function(ch){filmList.appendChild(ch);});}});})(this)" style="margin-left:auto;font-size:11px;font-weight:500;color:var(--text-faint);background:var(--bg-elev-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;flex-shrink:0" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border-strong)'" onmouseout="this.style.color='var(--text-faint)';this.style.borderColor='var(--border)'">newest first</button>
-  <label style="margin-left:8px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--text-faint);cursor:pointer;flex-shrink:0"><input type="checkbox" id="${tlIdTeam}-members-chk" style="accent-color:var(--accent);cursor:pointer" onchange="(function(chk){var show=chk.checked;var c=document.getElementById('${tlIdTeam}');c.querySelectorAll('[data-member-chips]').forEach(function(el){el.style.display=show?'flex':'none';});})(this)"> members</label>
 </h3>
+<div style="margin-bottom:8px">
+  <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--text-faint);cursor:pointer"><input type="checkbox" id="${tlIdTeam}-members-chk" style="accent-color:var(--accent);cursor:pointer" onchange="(function(chk){var show=chk.checked;var c=document.getElementById('${tlIdTeam}');c.querySelectorAll('[data-member-chips]').forEach(function(el){el.style.display=show?'flex':'none';});})(this)"> Show members</label>
+</div>
 <div id="${tlIdTeam}" style="padding:0 0 4px">${tlRowsTeam}</div>
 </section>`;
 })() : `<section><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${subs.map(s=>filmCard(s)).join('')}</div></section>`}
