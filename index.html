@@ -30,7 +30,7 @@ bg.appendChild(col);
 }
 })();</script>
 
-<button id="version-btn" aria-label="View changelog">v2.1</button>
+<button id="version-btn" aria-label="View changelog">v2.2</button>
 <div class="brand">
 <button id="home-btn" onclick="preSearchView=null;state.view='events';state.sort=DEFAULT_SORT['events']||'default';var s=document.getElementById('sort');if(s)s.value=state.sort;scrollToTabs();render();" aria-label="Go to Events home" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;width:auto;-webkit-tap-highlight-color:transparent;">
 <div class="logo-title" style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;line-height:1;width:auto">
@@ -2790,16 +2790,19 @@ if (newCommentsChartEl) newCommentsChartEl.querySelectorAll('.leader[data-id]').
 }
 }
 let _ytFetchInFlight = false;
-async function fetchYtViewCounts(triggerBtn){
+async function fetchYtViewCounts(triggerBtn,opts){
 if (_ytFetchInFlight) return null; // a refresh is already running — ignore this click entirely
 _ytFetchInFlight = true;
 try {
-  return await fetchYtViewCounts_inner(triggerBtn);
+  return await fetchYtViewCounts_inner(triggerBtn,opts);
 } finally {
   _ytFetchInFlight = false;
 }
 }
-async function fetchYtViewCounts_inner(triggerBtn){
+async function fetchYtViewCounts_inner(triggerBtn,opts){
+// silent = automatic refresh on page open: no "Fetching…" UI, no Google Sheets log, and if the fetch fails
+// the page just keeps showing the saved (baked) numbers.
+const silent = !!(opts&&opts.silent);
 const list = document.getElementById('yt-views-list');
 const teamList = document.getElementById('yt-team-views-list');
 const memberList = document.getElementById('yt-member-views-list');
@@ -2807,18 +2810,18 @@ const eventList = document.getElementById('yt-event-views-list');
 const fetchBtn = document.getElementById('yt-fetch-btn');
 const dlBtn = document.getElementById('yt-download-btn');
 const meta = document.getElementById('yt-views-meta');
-if (fetchBtn){fetchBtn.disabled = true;}
-if (dlBtn){dlBtn.disabled = true;}
+if (fetchBtn && !silent){fetchBtn.disabled = true;}
+if (dlBtn && !silent){dlBtn.disabled = true;}
 if (triggerBtn){triggerBtn.textContent = 'Fetching…';}
-if (list) list.innerHTML = '<div style="color:var(--text-faint);font-size:13px">Fetching view counts from YouTube…</div>';
-if (teamList) teamList.innerHTML = '';
-if (memberList) memberList.innerHTML = '';
-if (eventList) eventList.innerHTML = '';
+if (list && !silent) list.innerHTML = '<div style="color:var(--text-faint);font-size:13px">Fetching view counts from YouTube…</div>';
+if (teamList && !silent) teamList.innerHTML = '';
+if (memberList && !silent) memberList.innerHTML = '';
+if (eventList && !silent) eventList.innerHTML = '';
 const commentViewList = document.getElementById('yt-comment-views-list');
 const commentTeamList = document.getElementById('yt-comment-team-list');
 const newCommentsPanel = document.getElementById('yt-new-comments-panel');
-if (commentViewList) commentViewList.innerHTML = '';
-if (commentTeamList) commentTeamList.innerHTML = '';
+if (commentViewList && !silent) commentViewList.innerHTML = '';
+if (commentTeamList && !silent) commentTeamList.innerHTML = '';
 if (newCommentsPanel) newCommentsPanel.style.display = 'none'; // stays hidden — surfaced in Comments panel New tab
 const newLikesPanel = document.getElementById('yt-new-likes-panel');
 if (newLikesPanel) newLikesPanel.style.display = 'none'; // stays hidden — surfaced in Likes panel New tab
@@ -2843,6 +2846,7 @@ if (item.contentDetails&&item.contentDetails.duration) durationMap[item.id] = it
 if (triggerBtn) triggerBtn.textContent = `Fetching… ${Math.min(i+chunkSize,videoIds.length)}/${videoIds.length}`;
 }
 }catch(e){
+if (silent){console.warn('Automatic YouTube refresh failed:', e);return null;}
 if (list) list.innerHTML = `<div style="color:var(--accent-2);font-size:13px">Error: ${e.message}</div>`;
 if (fetchBtn){fetchBtn.disabled = false;fetchBtn.innerHTML = '&#8635; Refresh';}
 if (dlBtn){dlBtn.disabled = false;}
@@ -2870,7 +2874,7 @@ renderYtViews(DATA.submissions,viewMap,originalViews,commentMap,originalComments
 if (meta) meta.textContent = 'Last updated ' + fetched;
 // Log this refresh to Google Sheets (fire-and-forget — never blocks the UI
 // or surfaces an error to the user; failures are just logged to console).
-if (SHEETS_LOG_URL) {
+if (SHEETS_LOG_URL && !silent) {
   (function(){
     const films = DATA.submissions
       .filter(s => s.video_id && !s._anthology_secondary)
@@ -3071,6 +3075,8 @@ try { render(); } catch(e) {}
 }
 return{viewMap,commentMap,likeMap,durationMap,fetched};
 }
+// Refresh YouTube stats automatically each time the archive is opened (quietly, a moment after load).
+window.addEventListener('load',()=>{ setTimeout(()=>{ try{ fetchYtViewCounts(null,{silent:true}); }catch(e){} },1500); });
 async function refreshYtOnly(){
 const btn = document.getElementById('yt-fetch-btn');
 await fetchYtViewCounts(btn);
@@ -4331,9 +4337,18 @@ resetDrawerTheme();
 }
 const CHANGELOG_ENTRIES = [
 {
+date: '2026-11-25',
+version: 'v2.2',
+items: [
+'Added Now That\'s What I Call Sweded Music Videos event and films.',
+'Added sorting feature for event drawers.',
+],
+},
+{
 date: '2026-09-14',
 version: 'v2.1',
 items: [
+'Removed some stuff to simplify the archive.',
 'Removed the feedback button.',
 'Removed the "Streaks" section from the Stats tab.',
 'Removed the stats row under the header, and added a "General" section to the Stats tab (Films, Events, Teams, Members, Awards given) as the new default sub-tab.',
